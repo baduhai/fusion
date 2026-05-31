@@ -7,7 +7,13 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+    {
+      nixosModules = {
+        default = import ./nix/module.nix;
+        fusion = import ./nix/module.nix;
+      };
+    }
+    // flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         version = "0.0.0";
