@@ -103,6 +103,9 @@ export const itemAPI = {
 
   markUnread: (data: MarkItemsReadRequest) =>
     api.patch<void>("/items/-/unread", data),
+
+  fetchContent: (id: number) =>
+    api.post<APIResponse<Item>>(`/items/${id}/fetch-content`),
 };
 
 // Bookmark APIs

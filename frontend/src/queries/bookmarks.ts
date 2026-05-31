@@ -83,6 +83,7 @@ export function useStarredItems(filters: {
         title: bookmark.title,
         link: bookmark.link,
         content: bookmark.content,
+        full_content: "",
         pub_date: bookmark.pub_date,
         unread: false,
         created_at: bookmark.created_at,

@@ -15,6 +15,7 @@ export interface Feed {
   suspended: boolean;
   proxy?: string;
   refresh_interval?: number | null;
+  auto_fetch_content: boolean;
   created_at: number;
   updated_at: number;
   fetch_state: FeedFetchState;
@@ -44,6 +45,7 @@ export interface Item {
   title: string;
   link: string;
   content: string;
+  full_content: string;
   pub_date: number;
   unread: boolean;
   created_at: number;
@@ -91,6 +93,7 @@ export interface CreateFeedRequest {
   site_url?: string;
 proxy?: string;
   refresh_interval?: number | null;
+  auto_fetch_content?: boolean;
 }
 
 
@@ -102,6 +105,7 @@ export interface UpdateFeedRequest {
   suspended?: boolean;
   proxy?: string;
   refresh_interval?: number | null;
+  auto_fetch_content?: boolean;
 }
 
 export interface ValidateFeedRequest {

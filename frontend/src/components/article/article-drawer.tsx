@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  FileText,
   Star,
   X,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import {
   useItems,
   useMarkItemsRead,
   useMarkItemsUnread,
+  useFetchItemContent,
 } from "@/queries/items";
 import { useFeedLookup } from "@/queries/feeds";
 import {
@@ -67,6 +69,8 @@ export function ArticleDrawer() {
   const { isItemStarred, getBookmarkByItemId } = useBookmarkLookup();
   const createBookmark = useCreateBookmark();
   const deleteBookmark = useDeleteBookmark();
+
+  const fetchContent = useFetchItemContent();
 
   const articleIds = listArticles.map((a) => a.id);
 
@@ -133,6 +137,15 @@ export function ArticleDrawer() {
     window.open(safeArticleLink, "_blank", "noopener,noreferrer");
   };
 
+  const handleFetchContent = async () => {
+    if (!article) return;
+    try {
+      await fetchContent.mutateAsync(article.id);
+    } catch (error) {
+      console.error("Failed to fetch content:", error);
+    }
+  };
+
   const handleOpenFeed = () => {
     if (!article || article.feed_id <= 0) return;
     setSelectedFeed(article.feed_id);
@@ -196,6 +209,18 @@ export function ArticleDrawer() {
                     className={`h-4 w-4 ${starred ? "fill-current text-amber-500" : ""}`}
                   />
                   {starred ? t("article.action.unstar") : t("article.action.star")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchContent}
+                  disabled={fetchContent.isPending || (!!article.full_content)}
+                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                >
+                  <FileText className={`h-4 w-4 ${fetchContent.isPending ? "animate-pulse" : ""}`} />
+                  {fetchContent.isPending
+                    ? t("article.action.fetchingContent")
+                    : t("article.action.fetchContent")}
                 </Button>
                 <Button
                   asChild={Boolean(safeArticleLink)}
@@ -286,7 +311,7 @@ export function ArticleDrawer() {
                   className="prose prose-neutral mt-6 min-w-0 max-w-none break-words dark:prose-invert"
                   dangerouslySetInnerHTML={{
                     __html: processArticleContent(
-                      article.content,
+                      article.full_content || article.content,
                       safeArticleLink ?? undefined,
                     ),
                   }}

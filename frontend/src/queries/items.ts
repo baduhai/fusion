@@ -219,3 +219,40 @@ export function useMarkItemsRead() {
 export function useMarkItemsUnread() {
   return useSetItemsReadState(true);
 }
+
+export function useFetchItemContent() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (itemId: number) => {
+      const res = await itemAPI.fetchContent(itemId);
+      return res.data;
+    },
+    onSuccess: (updatedItem) => {
+      if (!updatedItem) return;
+
+      qc.setQueryData<Item>(
+        queryKeys.items.detail(updatedItem.id),
+        updatedItem,
+      );
+
+      qc.setQueriesData<ItemsInfiniteData>(
+        { queryKey: queryKeys.items.lists() },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((item) =>
+                item.id === updatedItem.id
+                  ? { ...item, full_content: updatedItem.full_content }
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
+    },
+  });
+}

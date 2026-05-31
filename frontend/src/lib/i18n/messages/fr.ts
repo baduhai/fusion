@@ -158,6 +158,8 @@ export const frMessages: PartialMessages = {
   "feeds.toast.refreshing": "Actualisation de tous les flux...",
   "feeds.toast.renameFailed": "Echec de renommage du groupe",
   "feeds.toast.renamed": "Groupe renomme",
+  "article.action.fetchContent": "Récupérer le contenu complet",
+  "article.action.fetchingContent": "Récupération...",
   "article.action.markRead": "Marquer comme lu",
   "article.action.markUnread": "Marquer comme non lu",
   "article.action.openInBrowser": "Ouvrir dans le navigateur",

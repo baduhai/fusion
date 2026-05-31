@@ -10,16 +10,17 @@ type Group struct {
 
 // Feed represents an RSS/Atom feed.
 type Feed struct {
-	ID              int64  `json:"id"`
-	GroupID         int64  `json:"group_id"`
-	Name            string `json:"name"`
-	Link            string `json:"link"`
-	SiteURL         string `json:"site_url,omitempty"`
-	Suspended       bool   `json:"suspended"`
-	Proxy           string `json:"proxy,omitempty"`
-	RefreshInterval *int64 `json:"refresh_interval,omitempty"`
-	CreatedAt       int64  `json:"created_at"`
-	UpdatedAt       int64  `json:"updated_at"`
+	ID               int64  `json:"id"`
+	GroupID          int64  `json:"group_id"`
+	Name             string `json:"name"`
+	Link             string `json:"link"`
+	SiteURL          string `json:"site_url,omitempty"`
+	Suspended        bool   `json:"suspended"`
+	Proxy            string `json:"proxy,omitempty"`
+	RefreshInterval  *int64 `json:"refresh_interval,omitempty"`
+	AutoFetchContent bool   `json:"auto_fetch_content"`
+	CreatedAt        int64  `json:"created_at"`
+	UpdatedAt        int64  `json:"updated_at"`
 
 	FetchState FeedFetchState `json:"fetch_state"`
 
@@ -58,15 +59,16 @@ type FeedFetchState struct {
 
 // Item represents a feed item.
 type Item struct {
-	ID        int64  `json:"id"`
-	FeedID    int64  `json:"feed_id"`
-	GUID      string `json:"guid"`
-	Title     string `json:"title"`
-	Link      string `json:"link"`
-	Content   string `json:"content"`
-	PubDate   int64  `json:"pub_date"`
-	Unread    bool   `json:"unread"`
-	CreatedAt int64  `json:"created_at"`
+	ID          int64  `json:"id"`
+	FeedID      int64  `json:"feed_id"`
+	GUID        string `json:"guid"`
+	Title       string `json:"title"`
+	Link        string `json:"link"`
+	Content     string `json:"content"`
+	FullContent string `json:"full_content"`
+	PubDate     int64  `json:"pub_date"`
+	Unread      bool   `json:"unread"`
+	CreatedAt   int64  `json:"created_at"`
 }
 
 // Bookmark represents a saved item snapshot.

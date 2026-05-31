@@ -16,13 +16,14 @@ import (
 )
 
 type Puller struct {
-	store       *store.Store
-	config      *config.Config
-	logger      *slog.Logger
-	interval    time.Duration
-	timeout     time.Duration
-	maxBackoff  time.Duration
-	concurrency *semaphore.Weighted
+	store          *store.Store
+	config         *config.Config
+	logger         *slog.Logger
+	interval       time.Duration
+	timeout        time.Duration
+	maxBackoff     time.Duration
+	concurrency    *semaphore.Weighted
+	contentFetcher *ContentFetcher
 }
 
 func (p *Puller) effectiveInterval(feed *model.Feed) time.Duration {
@@ -34,13 +35,14 @@ func (p *Puller) effectiveInterval(feed *model.Feed) time.Duration {
 
 func New(st *store.Store, cfg *config.Config) *Puller {
 	return &Puller{
-		store:       st,
-		config:      cfg,
-		logger:      slog.Default(),
-		interval:    time.Duration(cfg.PullInterval) * time.Second,
-		timeout:     time.Duration(cfg.PullTimeout) * time.Second,
-		maxBackoff:  time.Duration(cfg.PullMaxBackoff) * time.Second,
-		concurrency: semaphore.NewWeighted(int64(cfg.PullConcurrency)),
+		store:          st,
+		config:         cfg,
+		logger:         slog.Default(),
+		interval:       time.Duration(cfg.PullInterval) * time.Second,
+		timeout:        time.Duration(cfg.PullTimeout) * time.Second,
+		maxBackoff:     time.Duration(cfg.PullMaxBackoff) * time.Second,
+		concurrency:    semaphore.NewWeighted(int64(cfg.PullConcurrency)),
+		contentFetcher: NewContentFetcher(st, cfg.AllowPrivateFeeds),
 	}
 }
 
@@ -220,6 +222,10 @@ func (p *Puller) pullFeed(ctx context.Context, feed *model.Feed) {
 	if err != nil {
 		p.logger.Error("failed to batch create items", "feed_id", feed.ID, "error", err)
 		return
+	}
+
+	if feed.AutoFetchContent && newCount > 0 {
+		p.contentFetcher.FetchForFeed(feed.ID, result.Items)
 	}
 
 	if err := p.store.UpdateFeedFetchSuccess(feed.ID, store.UpdateFeedFetchSuccessParams{

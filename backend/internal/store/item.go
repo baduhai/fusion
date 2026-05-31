@@ -25,7 +25,7 @@ type ListItemsParams struct {
 
 func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 	query := `
-		SELECT items.id, items.feed_id, items.guid, items.title, items.link, items.content, items.pub_date, items.unread, items.created_at
+		SELECT items.id, items.feed_id, items.guid, items.title, items.link, items.content, items.full_content, items.pub_date, items.unread, items.created_at
 		FROM items
 	`
 	args := []any{}
@@ -76,7 +76,7 @@ func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 	for rows.Next() {
 		i := &model.Item{}
 		var unread int
-		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.PubDate, &unread, &i.CreatedAt); err != nil {
+		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt); err != nil {
 			return nil, err
 		}
 		i.Unread = intToBool(unread)
@@ -89,10 +89,10 @@ func (s *Store) GetItem(id int64) (*model.Item, error) {
 	i := &model.Item{}
 	var unread int
 	err := s.db.QueryRow(`
-		SELECT id, feed_id, guid, title, link, content, pub_date, unread, created_at
+		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, created_at
 		FROM items
 		WHERE id = :id
-	`, sql.Named("id", id)).Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.PubDate, &unread, &i.CreatedAt)
+	`, sql.Named("id", id)).Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("%w: item", ErrNotFound)
@@ -181,6 +181,17 @@ func (s *Store) BatchCreateItemsIgnore(feedID int64, inputs []BatchCreateItemInp
 	}
 
 	return created, nil
+}
+
+// UpdateItemFullContent sets full_content for an item identified by (feed_id, guid),
+// but only if full_content is currently empty to avoid redundant work.
+func (s *Store) UpdateItemFullContent(feedID int64, guid, fullContent string) error {
+	_, err := s.db.Exec(`
+		UPDATE items
+		SET full_content = :full_content
+		WHERE feed_id = :feed_id AND guid = :guid AND (full_content IS NULL OR full_content = '')
+	`, sql.Named("feed_id", feedID), sql.Named("guid", guid), sql.Named("full_content", fullContent))
+	return err
 }
 
 func (s *Store) UpdateItemUnread(id int64, unread bool) error {
@@ -328,7 +339,7 @@ type ListFeverItemsParams struct {
 
 func (s *Store) ListFeverItems(params ListFeverItemsParams) ([]*model.Item, error) {
 	query := `
-		SELECT id, feed_id, guid, title, link, content, pub_date, unread, created_at
+		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, created_at
 		FROM items
 		WHERE 1=1
 	`
@@ -375,7 +386,7 @@ func (s *Store) ListFeverItems(params ListFeverItemsParams) ([]*model.Item, erro
 	for rows.Next() {
 		i := &model.Item{}
 		var unread int
-		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.PubDate, &unread, &i.CreatedAt); err != nil {
+		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt); err != nil {
 			return nil, err
 		}
 		i.Unread = intToBool(unread)
@@ -452,7 +463,7 @@ func (s *Store) searchItemsLike(query string, limit int) ([]*SearchItemResult, e
 	rows, err := s.db.Query(`
 		SELECT id, feed_id, title, pub_date
 		FROM items
-		WHERE title LIKE :query OR content LIKE :query
+		WHERE title LIKE :query OR content LIKE :query OR full_content LIKE :query
 		ORDER BY pub_date DESC, id DESC
 		LIMIT :limit
 	`, sql.Named("query", "%"+query+"%"), sql.Named("limit", limit))

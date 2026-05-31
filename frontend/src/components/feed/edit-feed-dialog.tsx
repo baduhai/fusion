@@ -58,6 +58,7 @@ export function EditFeedDialog() {
   const [proxy, setProxy] = useState("");
   const [suspended, setSuspended] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState<string>("default");
+  const [autoFetchContent, setAutoFetchContent] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -89,6 +90,7 @@ export function EditFeedDialog() {
       } else {
         setRefreshInterval("default");
       }
+      setAutoFetchContent(editingFeed.auto_fetch_content);
       setIsAdvancedOpen(!!editingFeed.proxy || editingFeed.refresh_interval != null);
       setIsMobileErrorTooltipOpen(false);
     }
@@ -101,6 +103,7 @@ export function EditFeedDialog() {
     setProxy("");
     setSuspended(false);
     setRefreshInterval("default");
+    setAutoFetchContent(false);
     setIsAdvancedOpen(false);
     setIsDeleteOpen(false);
   };
@@ -159,6 +162,10 @@ export function EditFeedDialog() {
         if (editingFeed.refresh_interval !== newVal) {
           request.refresh_interval = newVal;
         }
+      }
+
+      if (autoFetchContent !== editingFeed.auto_fetch_content) {
+        request.auto_fetch_content = autoFetchContent;
       }
 
       if (Object.keys(request).length === 0) {
@@ -336,6 +343,21 @@ export function EditFeedDialog() {
                 {t("feed.add.advanced")}
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4 pl-5 pt-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-[13px] font-medium">
+                      {t("feed.autoFetchContent")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {t("feed.autoFetchContentDescription")}
+                    </p>
+                  </div>
+                  <Switch
+                    id="edit-feed-auto-fetch"
+                    checked={autoFetchContent}
+                    onCheckedChange={setAutoFetchContent}
+                  />
+                </div>
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-medium" id="edit-feed-refresh-label">
                     {t("feed.add.refreshFrequencyLabel")}

@@ -18,22 +18,24 @@ import (
 )
 
 type createFeedRequest struct {
-	GroupID         int64  `json:"group_id" binding:"required"`
-	Name            string `json:"name" binding:"required"`
-	Link            string `json:"link" binding:"required"`
-	SiteURL         string `json:"site_url"`
-	Proxy           string `json:"proxy"`
-	RefreshInterval *int64 `json:"refresh_interval"`
+	GroupID          int64  `json:"group_id" binding:"required"`
+	Name             string `json:"name" binding:"required"`
+	Link             string `json:"link" binding:"required"`
+	SiteURL          string `json:"site_url"`
+	Proxy            string `json:"proxy"`
+	RefreshInterval  *int64 `json:"refresh_interval"`
+	AutoFetchContent bool   `json:"auto_fetch_content"`
 }
 
 type updateFeedRequest struct {
-	GroupID         *int64  `json:"group_id"`
-	Name            *string `json:"name"`
-	Link            *string `json:"link"`
-	SiteURL         *string `json:"site_url"`
-	Suspended       *bool   `json:"suspended"`
-	Proxy           *string `json:"proxy"`
-	RefreshInterval *int64  `json:"refresh_interval"`
+	GroupID          *int64  `json:"group_id"`
+	Name             *string `json:"name"`
+	Link             *string `json:"link"`
+	SiteURL          *string `json:"site_url"`
+	Suspended        *bool   `json:"suspended"`
+	Proxy            *string `json:"proxy"`
+	RefreshInterval  *int64  `json:"refresh_interval"`
+	AutoFetchContent *bool   `json:"auto_fetch_content"`
 }
 
 type validateFeedRequest struct {
@@ -137,7 +139,7 @@ func (h *Handler) createFeed(c *gin.Context) {
 		return
 	}
 
-	feed, err := h.store.CreateFeed(req.GroupID, req.Name, req.Link, req.SiteURL, req.Proxy, req.RefreshInterval)
+	feed, err := h.store.CreateFeed(req.GroupID, req.Name, req.Link, req.SiteURL, req.Proxy, req.RefreshInterval, req.AutoFetchContent)
 	if err != nil {
 		internalError(c, err, "create feed")
 		return
@@ -203,6 +205,9 @@ func (h *Handler) updateFeed(c *gin.Context) {
 		} else {
 			params.RefreshInterval = req.RefreshInterval
 		}
+	}
+	if req.AutoFetchContent != nil {
+		params.AutoFetchContent = req.AutoFetchContent
 	}
 
 	if err := h.store.UpdateFeed(id, params); err != nil {

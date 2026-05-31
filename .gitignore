@@ -15,3 +15,5 @@ backend/internal/web/dist/*
 !.env.example
 backend/fusion
 frontend/package-lock.json
+shell.nix
+.playwright-mcp/

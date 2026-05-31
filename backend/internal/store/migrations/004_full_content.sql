@@ -1,0 +1,2 @@
+ALTER TABLE items ADD COLUMN full_content TEXT DEFAULT '';
+ALTER TABLE feeds ADD COLUMN auto_fetch_content INTEGER NOT NULL DEFAULT 0;
