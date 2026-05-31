@@ -6,18 +6,19 @@
 }:
 let
   cfg = config.services.fusion;
-  inherit (lib) mkEnableOption mkOption mkIf types;
+  inherit (lib) mkEnableOption mkOption mkIf mkDefault types;
 in
 {
+
   options.services.fusion = {
     enable = mkEnableOption "Fusion — lightweight RSS reader and aggregator";
 
     package = mkOption {
       type = types.package;
-      default = pkgs.fusion or (throw "fusion package not found. Pass services.fusion.package or add the fusion flake input.");
-      defaultText = "pkgs.fusion";
-      description = "The fusion package to use.";
+      defaultText = lib.literalExpression "pkgs.fusion";
+      description = "The fusion package to use. Set this directly, or add `fusion.overlays.default` to nixpkgs overlays.";
     };
+
 
     port = mkOption {
       type = types.port;
@@ -26,9 +27,10 @@ in
     };
 
     passwordFile = mkOption {
-      type = with types; nullOr path;
+      type = with types; nullOr str;
       default = null;
       description = "Path to a file containing the login password. If unset, authentication is disabled.";
+      example = "/run/secrets/fusion-password";
     };
 
     dbPath = mkOption {
@@ -100,9 +102,10 @@ in
       };
 
       clientSecretFile = mkOption {
-        type = with types; nullOr path;
+        type = with types; nullOr str;
         default = null;
         description = "Path to a file containing the OIDC client secret.";
+        example = "/run/secrets/fusion-oidc-secret";
       };
 
       redirectURI = mkOption {
@@ -119,7 +122,11 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkMerge [
+    {
+      services.fusion.package = mkDefault pkgs.fusion;
+    }
+    (mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.oidc.issuer != null -> cfg.oidc.redirectURI != null;
@@ -204,5 +211,6 @@ in
         "/run/fusion/env"
       ];
     };
-  };
+  })
+  ];
 }

@@ -12,6 +12,10 @@
         default = import ./nix/module.nix;
         fusion = import ./nix/module.nix;
       };
+
+      overlays.default = final: prev: {
+        fusion = self.packages.${final.system}.default;
+      };
     }
     // flake-utils.lib.eachDefaultSystem (system:
       let
