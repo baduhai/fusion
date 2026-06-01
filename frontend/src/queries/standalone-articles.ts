@@ -12,6 +12,7 @@ export function useCreateStandaloneArticle() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.all });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.all });
     },
   });
 }

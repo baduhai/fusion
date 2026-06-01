@@ -23,14 +23,13 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		FROM feeds f
 		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
 		LEFT JOIN items i ON i.feed_id = f.id
-		WHERE f.link != :standalone_link
 		GROUP BY f.id, f.group_id, f.name, f.link, f.site_url,
 		         f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
 		         fs.etag, fs.last_modified, fs.cache_control, fs.expires_at, fs.last_checked_at,
 		         fs.next_check_at, fs.last_http_status, fs.retry_after_until, fs.last_success_at,
 		         fs.last_error_at, fs.last_error, fs.consecutive_failures
 		ORDER BY f.id
-	`, sql.Named("standalone_link", standaloneFeedLink))
+	`)
 	if err != nil {
 		return nil, err
 	}
