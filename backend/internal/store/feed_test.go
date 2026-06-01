@@ -20,8 +20,8 @@ func TestListFeeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListFeeds() failed: %v", err)
 	}
-	if len(feeds) != 0 {
-		t.Errorf("expected 0 feeds, got %d", len(feeds))
+	if len(feeds) != 1 {
+		t.Errorf("expected 1 feed (standalone), got %d", len(feeds))
 	}
 
 	// Create feeds
@@ -34,15 +34,16 @@ func TestListFeeds(t *testing.T) {
 		t.Fatalf("ListFeeds() failed: %v", err)
 	}
 
-	if len(feeds) != 2 {
-		t.Fatalf("expected 2 feeds, got %d", len(feeds))
+	if len(feeds) != 3 {
+		t.Fatalf("expected 3 feeds (1 standalone + 2 created), got %d", len(feeds))
 	}
 
-	if feeds[0].ID != f1.ID || feeds[1].ID != f2.ID {
+	// The standalone feed is at index 0, the created feeds at 1 and 2.
+	if feeds[1].ID != f1.ID || feeds[2].ID != f2.ID {
 		t.Error("feed IDs don't match")
 	}
 
-	if feeds[0].Suspended != false || feeds[1].Suspended != false {
+	if feeds[1].Suspended != false || feeds[2].Suspended != false {
 		t.Error("expected suspended to be false by default")
 	}
 }
@@ -604,7 +605,7 @@ func TestBatchCreateFeedsHandlesExistingAndInBatchDuplicates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListFeeds() failed: %v", err)
 	}
-	if len(feeds) != 3 {
-		t.Fatalf("expected total 3 feeds (1 existing + 2 new), got %d", len(feeds))
+	if len(feeds) != 4 {
+		t.Fatalf("expected total 4 feeds (1 standalone + 1 existing + 2 new), got %d", len(feeds))
 	}
 }
