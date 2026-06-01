@@ -2,6 +2,7 @@ import {
   useNavigate,
   useParams,
   useSearch,
+  useLocation,
 } from "@tanstack/react-router";
 import { useCallback } from "react";
 import {
@@ -21,6 +22,7 @@ export function useUrlState() {
     groupId?: string;
   };
   const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const { pathname } = useLocation();
 
   const routeFeedId = parsePositiveIntegerParam(params.feedId);
   const routeGroupId = parsePositiveIntegerParam(params.groupId);
@@ -80,6 +82,15 @@ export function useUrlState() {
         return;
       }
 
+      if (pathname === "/standalone") {
+        navigate({
+          to: "/standalone",
+          search: nextSearch,
+          replace: replace ?? true,
+        });
+        return;
+      }
+
       navigate({
         to: "/$filter",
         params: { filter: nextFilter },
@@ -90,6 +101,7 @@ export function useUrlState() {
     [
       articleFilter,
       navigate,
+      pathname,
       selectedArticleId,
       selectedFeedId,
       selectedGroupId,

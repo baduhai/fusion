@@ -1,10 +1,11 @@
-import { useLocation } from "@tanstack/react-router";
-import { Inbox, Layers, Star } from "lucide-react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { BookOpen, Inbox, Layers, Star } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isArticleFilter } from "@/lib/article-filter";
 import { useGroups } from "@/queries/groups";
 import { useFeedLookup, useUnreadCounts } from "@/queries/feeds";
 import { useBookmarkLookup } from "@/queries/bookmarks";
+import { useStandaloneArticles } from "@/queries/standalone-articles";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export function FeedList() {
   const { feeds, getFeedsByGroup } = useFeedLookup();
   const { getTotalUnreadCount } = useUnreadCounts();
   const { bookmarks } = useBookmarkLookup();
+  const { data: standaloneArticles = [] } = useStandaloneArticles();
   const {
     selectedFeedId,
     selectedGroupId,
@@ -24,6 +26,7 @@ export function FeedList() {
     selectTopLevelFilter,
   } = useUrlState();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const firstPathSegment = pathname.split("/").filter(Boolean)[0];
   const isOnHomePage =
     typeof firstPathSegment === "string" && isArticleFilter(firstPathSegment);
@@ -31,6 +34,8 @@ export function FeedList() {
     isOnHomePage && selectedFeedId === null && selectedGroupId === null;
   const totalUnread = getTotalUnreadCount();
   const starredCount = bookmarks.length;
+  const standaloneCount = standaloneArticles.length;
+  const isStandalonePage = pathname === "/standalone";
 
   const topFilters: Array<{
     value: "all" | "unread" | "starred";
@@ -101,6 +106,27 @@ export function FeedList() {
             {t("search.group.feeds")}
           </span>
         </div>
+
+        {/* Standalone Articles virtual feed */}
+        <button
+          onClick={() =>
+            navigate({ to: "/standalone" })
+          }
+          className={cn(
+            "flex w-full min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors",
+            isStandalonePage
+              ? "bg-accent text-accent-foreground"
+              : "hover:bg-accent/50",
+          )}
+        >
+          <BookOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1">
+            {t("feed.standaloneArticles")}
+          </span>
+          <span className="shrink-0 text-[11px] text-muted-foreground">
+            {standaloneCount}
+          </span>
+        </button>
 
         {/* Feed groups */}
         <div className="w-full min-w-0 space-y-0.5">

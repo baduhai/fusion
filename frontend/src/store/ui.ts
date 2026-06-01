@@ -11,6 +11,7 @@ interface UIState {
   editingFeed: Feed | null;
   isImportOpmlOpen: boolean;
   isShortcutsOpen: boolean;
+  isAddStandaloneOpen: boolean;
 
   // Mobile sidebar
   isSidebarOpen: boolean;
@@ -24,6 +25,7 @@ interface UIState {
   setImportOpmlOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
   setSidebarOpen: (open: boolean) => void;
+  setAddStandaloneOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -36,6 +38,7 @@ export const useUIStore = create<UIState>((set) => ({
   isImportOpmlOpen: false,
   isShortcutsOpen: false,
   isSidebarOpen: false,
+  isAddStandaloneOpen: false,
 
   setSearchOpen: (open) => set({ isSearchOpen: open }),
 
@@ -53,4 +56,6 @@ export const useUIStore = create<UIState>((set) => ({
   setShortcutsOpen: (open) => set({ isShortcutsOpen: open }),
 
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
+
+  setAddStandaloneOpen: (open) => set({ isAddStandaloneOpen: open }),
 }));

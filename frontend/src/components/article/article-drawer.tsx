@@ -7,6 +7,7 @@ import {
   ExternalLink,
   FileText,
   Star,
+  Trash2,
   X,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -28,6 +29,8 @@ import {
   useDeleteBookmark,
   useStarredItems,
 } from "@/queries/bookmarks";
+import { useDeleteStandaloneArticle } from "@/queries/standalone-articles";
+import { useStandaloneArticlesItems } from "@/queries/standalone-articles";
 import { useArticleNavigation } from "@/hooks/use-keyboard";
 import { useI18n } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
@@ -62,7 +65,9 @@ export function ArticleDrawer() {
     feedId: selectedFeedId,
     groupId: selectedGroupId,
   });
-  const listArticles = isStarredMode ? starredArticles : articles;
+  const standaloneArticles = useStandaloneArticlesItems();
+  const isStandaloneMode = window.location.pathname === "/standalone";
+  const listArticles = isStarredMode ? starredArticles : isStandaloneMode ? standaloneArticles : articles;
 
   const markRead = useMarkItemsRead();
   const markUnread = useMarkItemsUnread();
@@ -71,6 +76,7 @@ export function ArticleDrawer() {
   const deleteBookmark = useDeleteBookmark();
 
   const fetchContent = useFetchItemContent();
+  const deleteStandalone = useDeleteStandaloneArticle();
 
   const articleIds = listArticles.map((a) => a.id);
 
@@ -81,6 +87,7 @@ export function ArticleDrawer() {
   const shouldFetchArticle =
     selectedArticleId !== null &&
     selectedArticleId > 0 &&
+    !isStandaloneMode &&
     (isStarredMode || storeArticle === null);
   const { data: fetchedArticle } = useItem(
     selectedArticleId,
@@ -90,8 +97,9 @@ export function ArticleDrawer() {
   const article: Item | null =
     (isStarredMode ? fetchedArticle ?? storeArticle : storeArticle ?? fetchedArticle) ??
     null;
+  const isStandalone = article !== null && article.feed_id <= 0 && !isStarredMode;
   const canToggleRead =
-    article !== null && article.id > 0 && (!isStarredMode || fetchedArticle !== undefined);
+    article !== null && article.id > 0 && !isStandalone && (!isStarredMode || fetchedArticle !== undefined);
   const feed = article ? getFeedById(article.feed_id) : null;
   const bookmark = article ? getBookmarkByItemId(article.id) : null;
   const starred = article ? isItemStarred(article.id) : false;
@@ -146,6 +154,16 @@ export function ArticleDrawer() {
     }
   };
 
+  const handleRemoveStandalone = async () => {
+    if (!article || !isStandalone) return;
+    try {
+      await deleteStandalone.mutateAsync(article.id);
+      setSelectedArticle(null);
+    } catch (error) {
+      console.error("Failed to remove standalone article:", error);
+    }
+  };
+
   const handleOpenFeed = () => {
     if (!article || article.feed_id <= 0) return;
     setSelectedFeed(article.feed_id);
@@ -183,22 +201,24 @@ export function ArticleDrawer() {
             {/* Header */}
             <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleRead}
-                  disabled={!canToggleRead}
-                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                >
-                  {article.unread ? (
-                    <Circle className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <CircleCheck className="h-4 w-4 text-primary" />
-                  )}
-                  {article.unread
-                    ? t("article.action.markRead")
-                    : t("article.action.markUnread")}
-                </Button>
+                {!isStandalone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToggleRead}
+                    disabled={!canToggleRead}
+                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                  >
+                    {article.unread ? (
+                      <Circle className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <CircleCheck className="h-4 w-4 text-primary" />
+                    )}
+                    {article.unread
+                      ? t("article.action.markRead")
+                      : t("article.action.markUnread")}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -210,18 +230,34 @@ export function ArticleDrawer() {
                   />
                   {starred ? t("article.action.unstar") : t("article.action.star")}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleFetchContent}
-                  disabled={fetchContent.isPending || (!!article.full_content)}
-                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                >
-                  <FileText className={`h-4 w-4 ${fetchContent.isPending ? "animate-pulse" : ""}`} />
-                  {fetchContent.isPending
-                    ? t("article.action.fetchingContent")
-                    : t("article.action.fetchContent")}
-                </Button>
+                {!isStandalone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleFetchContent}
+                    disabled={fetchContent.isPending || (!!article.full_content)}
+                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                  >
+                    <FileText className={`h-4 w-4 ${fetchContent.isPending ? "animate-pulse" : ""}`} />
+                    {fetchContent.isPending
+                      ? t("article.action.fetchingContent")
+                      : t("article.action.fetchContent")}
+                  </Button>
+                )}
+                {isStandalone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemoveStandalone}
+                    disabled={deleteStandalone.isPending}
+                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                    {deleteStandalone.isPending
+                      ? t("common.deleting")
+                      : t("standalone.remove")}
+                  </Button>
+                )}
                 <Button
                   asChild={Boolean(safeArticleLink)}
                   variant="outline"
@@ -284,6 +320,12 @@ export function ArticleDrawer() {
                           {feed?.name ?? bookmark?.feed_name ?? t("common.unknown")}
                         </span>
                       </button>
+                    ) : isStandalone ? (
+                      <span className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                        <span className="truncate">
+                          {getLinkDomain(article.link)}
+                        </span>
+                      </span>
                     ) : (
                       <span className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                         <span className="truncate">

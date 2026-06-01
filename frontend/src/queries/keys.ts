@@ -41,4 +41,8 @@ export const queryKeys = {
     all: ["bookmarks"] as const,
     list: () => [...queryKeys.bookmarks.all, "list"] as const,
   },
+  standaloneArticles: {
+    all: ["standalone-articles"] as const,
+    list: () => [...queryKeys.standaloneArticles.all, "list"] as const,
+  },
 };

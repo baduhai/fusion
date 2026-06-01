@@ -183,6 +183,19 @@ export interface BatchCreateFeedsResponse {
   errors?: string[];
 }
 
+export interface StandaloneArticle {
+  id: number;
+  link: string;
+  title: string;
+  content: string;
+  pub_date: number;
+  created_at: number;
+}
+
+export interface CreateStandaloneArticleRequest {
+  link: string;
+}
+
 export interface AppInfoResponse {
   pull_interval: number;
 }
