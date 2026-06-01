@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,6 +11,7 @@ import (
 
 	readability "codeberg.org/readeck/go-readability"
 	"github.com/0x2E/fusion/internal/pkg/httpc"
+	"github.com/0x2E/fusion/internal/store"
 	"github.com/gin-gonic/gin"
 )
 
@@ -38,13 +40,13 @@ func (h *Handler) createStandaloneArticle(c *gin.Context) {
 		return
 	}
 
-	exists, err := h.store.ItemExists(feedID, link)
-	if err != nil {
-		internalError(c, err, "check existing article")
+	existing, err := h.store.GetItemByFeedAndGUID(feedID, link)
+	if err == nil {
+		dataResponse(c, existing)
 		return
 	}
-	if exists {
-		badRequestError(c, "article already exists")
+	if !errors.Is(err, store.ErrNotFound) {
+		internalError(c, err, "check existing article")
 		return
 	}
 

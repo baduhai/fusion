@@ -418,6 +418,25 @@ func (s *Store) ItemExists(feedID int64, guid string) (bool, error) {
 	return exists, err
 }
 
+func (s *Store) GetItemByFeedAndGUID(feedID int64, guid string) (*model.Item, error) {
+	i := &model.Item{}
+	var unread int
+	err := s.db.QueryRow(`
+		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, created_at
+		FROM items
+		WHERE feed_id = :feed_id AND guid = :guid
+	`, sql.Named("feed_id", feedID), sql.Named("guid", guid)).Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%w: item", ErrNotFound)
+		}
+		return nil, fmt.Errorf("get item by feed and guid: %w", err)
+	}
+
+	i.Unread = intToBool(unread)
+	return i, nil
+}
+
 type SearchItemResult struct {
 	ID      int64  `json:"id"`
 	FeedID  int64  `json:"feed_id"`
