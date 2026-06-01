@@ -20,7 +20,7 @@
     // flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        version = "0.0.0";
+        version = "1.1.2";
 
         frontendDist = pkgs.buildNpmPackage {
           name = "fusion-frontend-${version}";
