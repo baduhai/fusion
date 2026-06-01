@@ -23,13 +23,14 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		FROM feeds f
 		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
 		LEFT JOIN items i ON i.feed_id = f.id
+		WHERE f.link != :standalone_link
 		GROUP BY f.id, f.group_id, f.name, f.link, f.site_url,
 		         f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
 		         fs.etag, fs.last_modified, fs.cache_control, fs.expires_at, fs.last_checked_at,
 		         fs.next_check_at, fs.last_http_status, fs.retry_after_until, fs.last_success_at,
 		         fs.last_error_at, fs.last_error, fs.consecutive_failures
 		ORDER BY f.id
-	`)
+	`, sql.Named("standalone_link", standaloneFeedLink))
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +79,75 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		feeds = append(feeds, f)
 	}
 	return feeds, rows.Err()
+}
+
+func (s *Store) GetFeedByLink(link string) (*model.Feed, error) {
+	f := &model.Feed{}
+	var suspended int
+	var autoFetchContent int
+	var refreshIntervalNull sql.NullInt64
+	err := s.db.QueryRow(`
+		SELECT f.id, f.group_id, f.name, f.link, f.site_url,
+		       f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		       COALESCE(fs.etag, ''), COALESCE(fs.last_modified, ''), COALESCE(fs.cache_control, ''),
+		       COALESCE(fs.expires_at, 0), COALESCE(fs.last_checked_at, 0), COALESCE(fs.next_check_at, 0),
+		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
+		       COALESCE(fs.last_error_at, 0), COALESCE(fs.last_error, ''), COALESCE(fs.consecutive_failures, 0)
+		FROM feeds f
+		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
+		WHERE f.link = :link
+	`, sql.Named("link", link)).Scan(
+		&f.ID,
+		&f.GroupID,
+		&f.Name,
+		&f.Link,
+		&f.SiteURL,
+		&suspended,
+		&f.Proxy,
+		&refreshIntervalNull,
+		&autoFetchContent,
+		&f.CreatedAt,
+		&f.UpdatedAt,
+		&f.FetchState.ETag,
+		&f.FetchState.LastModified,
+		&f.FetchState.CacheControl,
+		&f.FetchState.ExpiresAt,
+		&f.FetchState.LastCheckedAt,
+		&f.FetchState.NextCheckAt,
+		&f.FetchState.LastHTTPStatus,
+		&f.FetchState.RetryAfterUntil,
+		&f.FetchState.LastSuccessAt,
+		&f.FetchState.LastErrorAt,
+		&f.FetchState.LastError,
+		&f.FetchState.ConsecutiveFailures,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%w: feed", ErrNotFound)
+		}
+		return nil, fmt.Errorf("get feed by link: %w", err)
+	}
+
+	f.Suspended = intToBool(suspended)
+	f.AutoFetchContent = intToBool(autoFetchContent)
+	if refreshIntervalNull.Valid {
+		f.RefreshInterval = &refreshIntervalNull.Int64
+	}
+	return f, nil
+}
+
+const standaloneFeedLink = "fusion://standalone"
+
+func (s *Store) GetStandaloneFeedID() (int64, error) {
+	var id int64
+	err := s.db.QueryRow(`SELECT id FROM feeds WHERE link = :link`, sql.Named("link", standaloneFeedLink)).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, fmt.Errorf("%w: standalone feed", ErrNotFound)
+		}
+		return 0, fmt.Errorf("get standalone feed id: %w", err)
+	}
+	return id, nil
 }
 
 func (s *Store) GetFeed(id int64) (*model.Feed, error) {

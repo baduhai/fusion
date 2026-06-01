@@ -248,6 +248,21 @@ func (s *Store) batchUpdateItemsUnreadChunk(ids []int64, unread bool) error {
 	return err
 }
 
+func (s *Store) DeleteItem(id int64) error {
+	result, err := s.db.Exec(`DELETE FROM items WHERE id = :id`, sql.Named("id", id))
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("%w: item", ErrNotFound)
+	}
+	return nil
+}
+
 // MarkAllAsRead marks items as read. If feedID is nil, marks ALL items across all feeds.
 // If feedID is non-nil, only marks items from that specific feed.
 func (s *Store) MarkAllAsRead(feedID *int64) error {

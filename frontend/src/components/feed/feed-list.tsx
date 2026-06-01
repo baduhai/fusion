@@ -1,24 +1,24 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { BookOpen, Inbox, Layers, Star } from "lucide-react";
+import { useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isArticleFilter } from "@/lib/article-filter";
 import { useGroups } from "@/queries/groups";
 import { useFeedLookup, useUnreadCounts } from "@/queries/feeds";
 import { useBookmarkLookup } from "@/queries/bookmarks";
-import { useStandaloneArticles } from "@/queries/standalone-articles";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { FeedGroup } from "./feed-group";
-import { FeedItem } from "./feed-item";
+
+const standaloneFeedLink = "fusion://standalone";
 
 export function FeedList() {
   const { t } = useI18n();
   const { data: groups = [], isLoading } = useGroups();
-  const { feeds, getFeedsByGroup } = useFeedLookup();
+  const { feeds } = useFeedLookup();
   const { getTotalUnreadCount } = useUnreadCounts();
   const { bookmarks } = useBookmarkLookup();
-  const { data: standaloneArticles = [] } = useStandaloneArticles();
   const {
     selectedFeedId,
     selectedGroupId,
@@ -34,8 +34,20 @@ export function FeedList() {
     isOnHomePage && selectedFeedId === null && selectedGroupId === null;
   const totalUnread = getTotalUnreadCount();
   const starredCount = bookmarks.length;
-  const standaloneCount = standaloneArticles.length;
+
+  const standaloneFeed = useMemo(
+    () => feeds.find((f) => f.link === standaloneFeedLink),
+    [feeds],
+  );
+  const standaloneUnreadCount = standaloneFeed?.unread_count ?? 0;
   const isStandalonePage = pathname === "/standalone";
+
+  const regularFeeds = useMemo(
+    () => feeds.filter((f) => f.link !== standaloneFeedLink),
+    [feeds],
+  );
+  const getRegularFeedsByGroup = (groupId: number) =>
+    regularFeeds.filter((f) => f.group_id === groupId);
 
   const topFilters: Array<{
     value: "all" | "unread" | "starred";
@@ -46,7 +58,7 @@ export function FeedList() {
     {
       value: "unread",
       label: t("article.filter.unread"),
-      count: totalUnread,
+      count: totalUnread + standaloneUnreadCount,
       icon: Inbox,
     },
     {
@@ -58,7 +70,7 @@ export function FeedList() {
     {
       value: "all",
       label: t("article.filter.all"),
-      count: totalUnread,
+      count: totalUnread + standaloneUnreadCount,
       icon: Layers,
     },
   ];
@@ -124,14 +136,14 @@ export function FeedList() {
             {t("feed.standaloneArticles")}
           </span>
           <span className="shrink-0 text-[11px] text-muted-foreground">
-            {standaloneCount}
+            {standaloneUnreadCount}
           </span>
         </button>
 
         {/* Feed groups */}
         <div className="w-full min-w-0 space-y-0.5">
           {groups.map((group) => {
-            const groupFeeds = getFeedsByGroup(group.id);
+            const groupFeeds = getRegularFeedsByGroup(group.id);
 
             return (
               <FeedGroup
@@ -142,13 +154,6 @@ export function FeedList() {
               />
             );
           })}
-
-          {/* Ungrouped feeds (group_id = 0) */}
-          {feeds
-            .filter((f) => f.group_id === 0)
-            .map((feed) => (
-              <FeedItem key={feed.id} feed={feed} />
-            ))}
         </div>
       </div>
     </ScrollArea>

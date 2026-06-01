@@ -2,17 +2,14 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
 	readability "codeberg.org/readeck/go-readability"
 	"github.com/0x2E/fusion/internal/pkg/httpc"
-	"github.com/0x2E/fusion/internal/store"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,66 +17,6 @@ const standaloneContentFetchTimeout = 30
 
 type createStandaloneArticleRequest struct {
 	Link string `json:"link" binding:"required"`
-}
-
-func (h *Handler) listStandaloneArticles(c *gin.Context) {
-	limit := 50
-	offset := 0
-
-	if limitStr := c.Query("limit"); limitStr != "" {
-		val, err := strconv.Atoi(limitStr)
-		if err != nil || val <= 0 {
-			badRequestError(c, "invalid limit")
-			return
-		}
-		if val > maxListLimit {
-			val = maxListLimit
-		}
-		limit = val
-	}
-
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		val, err := strconv.Atoi(offsetStr)
-		if err != nil || val < 0 {
-			badRequestError(c, "invalid offset")
-			return
-		}
-		offset = val
-	}
-
-	articles, err := h.store.ListStandaloneArticles(limit, offset)
-	if err != nil {
-		internalError(c, err, "list standalone articles")
-		return
-	}
-
-	total, err := h.store.CountStandaloneArticles()
-	if err != nil {
-		internalError(c, err, "count standalone articles")
-		return
-	}
-
-	listResponse(c, articles, total)
-}
-
-func (h *Handler) getStandaloneArticle(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		badRequestError(c, "invalid id")
-		return
-	}
-
-	article, err := h.store.GetStandaloneArticle(id)
-	if err != nil {
-		if errors.Is(err, store.ErrNotFound) {
-			notFoundError(c, "standalone article")
-			return
-		}
-		internalError(c, err, "get standalone article")
-		return
-	}
-
-	dataResponse(c, article)
 }
 
 func (h *Handler) createStandaloneArticle(c *gin.Context) {
@@ -95,13 +32,19 @@ func (h *Handler) createStandaloneArticle(c *gin.Context) {
 		return
 	}
 
-	existing, err := h.store.GetStandaloneArticleByLink(link)
-	if err == nil {
-		dataResponse(c, existing)
+	feedID, err := h.store.GetStandaloneFeedID()
+	if err != nil {
+		internalError(c, err, "get standalone feed")
 		return
 	}
-	if !errors.Is(err, store.ErrNotFound) {
-		internalError(c, err, "check existing standalone article")
+
+	exists, err := h.store.ItemExists(feedID, link)
+	if err != nil {
+		internalError(c, err, "check existing article")
+		return
+	}
+	if exists {
+		badRequestError(c, "article already exists")
 		return
 	}
 
@@ -152,35 +95,12 @@ func (h *Handler) createStandaloneArticle(c *gin.Context) {
 		return
 	}
 
-	var pubDate int64
-	if article.PublishedTime != nil {
-		pubDate = article.PublishedTime.Unix()
-	}
-
-	result, err := h.store.CreateStandaloneArticle(link, title, content, pubDate)
+	now := time.Now().Unix()
+	result, err := h.store.CreateItem(feedID, link, title, link, content, now)
 	if err != nil {
-		internalError(c, err, "save standalone article")
+		internalError(c, err, "save article")
 		return
 	}
 
 	dataResponse(c, result)
-}
-
-func (h *Handler) deleteStandaloneArticle(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		badRequestError(c, "invalid id")
-		return
-	}
-
-	if err := h.store.DeleteStandaloneArticle(id); err != nil {
-		if errors.Is(err, store.ErrNotFound) {
-			notFoundError(c, "standalone article")
-			return
-		}
-		internalError(c, err, "delete standalone article")
-		return
-	}
-
-	c.Status(http.StatusNoContent)
 }

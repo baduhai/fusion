@@ -95,8 +95,8 @@ func TestMigrateLegacySchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("count feeds failed: %v", err)
 	}
-	if feedCount != 3 {
-		t.Fatalf("expected 3 active deduplicated feeds, got %d", feedCount)
+	if feedCount != 4 {
+		t.Fatalf("expected 4 feeds (3 legacy + 1 standalone), got %d", feedCount)
 	}
 
 	var (

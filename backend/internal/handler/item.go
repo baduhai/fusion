@@ -155,6 +155,25 @@ func (h *Handler) markItemsUnread(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *Handler) deleteItem(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		badRequestError(c, "invalid id")
+		return
+	}
+
+	if err := h.store.DeleteItem(id); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			notFoundError(c, "item")
+			return
+		}
+		internalError(c, err, "delete item")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 const contentFetchTimeout = 30
 
 func (h *Handler) fetchItemContent(c *gin.Context) {

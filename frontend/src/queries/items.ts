@@ -256,3 +256,18 @@ export function useFetchItemContent() {
     },
   });
 }
+
+export function useDeleteItem() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (itemId: number) => {
+      await itemAPI.delete(itemId);
+      return itemId;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.items.all });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.all });
+    },
+  });
+}

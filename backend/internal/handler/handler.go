@@ -137,13 +137,11 @@ func (h *Handler) SetupRouter() *gin.Engine {
 			auth.POST("/items/:id/fetch-content", h.fetchItemContent)
 			auth.PATCH("/items/-/read", h.markItemsRead)
 			auth.PATCH("/items/-/unread", h.markItemsUnread)
+			auth.DELETE("/items/:id", h.deleteItem)
 
 			auth.GET("/search", h.search)
 
-			auth.GET("/standalone-articles", h.listStandaloneArticles)
 			auth.POST("/standalone-articles", h.createStandaloneArticle)
-			auth.GET("/standalone-articles/:id", h.getStandaloneArticle)
-			auth.DELETE("/standalone-articles/:id", h.deleteStandaloneArticle)
 
 			auth.GET("/bookmarks", h.listBookmarks)
 			auth.POST("/bookmarks", h.createBookmark)

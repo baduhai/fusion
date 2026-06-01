@@ -7,7 +7,6 @@ import type {
   Feed,
   Item,
   Bookmark,
-  StandaloneArticle,
   CreateStandaloneArticleRequest,
   CreateGroupRequest,
   UpdateGroupRequest,
@@ -108,6 +107,8 @@ export const itemAPI = {
 
   fetchContent: (id: number) =>
     api.post<APIResponse<Item>>(`/items/${id}/fetch-content`),
+
+  delete: (id: number) => api.delete<void>(`/items/${id}`),
 };
 
 // Bookmark APIs
@@ -130,20 +131,8 @@ export const bookmarkAPI = {
 
 // Standalone article APIs
 export const standaloneArticleAPI = {
-  list: (limit = 50, offset = 0) => {
-    const query = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.toString(),
-    });
-    return api.get<ListAPIResponse<StandaloneArticle>>(`/standalone-articles?${query}`);
-  },
-
-  get: (id: number) => api.get<APIResponse<StandaloneArticle>>(`/standalone-articles/${id}`),
-
   create: (data: CreateStandaloneArticleRequest) =>
-    api.post<APIResponse<StandaloneArticle>>("/standalone-articles", data),
-
-  delete: (id: number) => api.delete<void>(`/standalone-articles/${id}`),
+    api.post<APIResponse<Item>>("/standalone-articles", data),
 };
 
 // Search APIs

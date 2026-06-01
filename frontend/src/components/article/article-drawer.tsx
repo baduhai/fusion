@@ -21,6 +21,7 @@ import {
   useMarkItemsRead,
   useMarkItemsUnread,
   useFetchItemContent,
+  useDeleteItem,
 } from "@/queries/items";
 import { useFeedLookup } from "@/queries/feeds";
 import {
@@ -29,8 +30,6 @@ import {
   useDeleteBookmark,
   useStarredItems,
 } from "@/queries/bookmarks";
-import { useDeleteStandaloneArticle } from "@/queries/standalone-articles";
-import { useStandaloneArticlesItems } from "@/queries/standalone-articles";
 import { useArticleNavigation } from "@/hooks/use-keyboard";
 import { useI18n } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
@@ -38,6 +37,8 @@ import { processArticleContent } from "@/lib/content";
 import { getFaviconUrl } from "@/lib/api/favicon";
 import { FeedFavicon } from "@/components/feed/feed-favicon";
 import { toSafeExternalUrl } from "@/lib/safe-url";
+
+const standaloneFeedLink = "fusion://standalone";
 
 export function ArticleDrawer() {
   const { t } = useI18n();
@@ -65,9 +66,8 @@ export function ArticleDrawer() {
     feedId: selectedFeedId,
     groupId: selectedGroupId,
   });
-  const standaloneArticles = useStandaloneArticlesItems();
-  const isStandaloneMode = window.location.pathname === "/standalone";
-  const listArticles = isStarredMode ? starredArticles : isStandaloneMode ? standaloneArticles : articles;
+
+  const listArticles = isStarredMode ? starredArticles : articles;
 
   const markRead = useMarkItemsRead();
   const markUnread = useMarkItemsUnread();
@@ -76,7 +76,7 @@ export function ArticleDrawer() {
   const deleteBookmark = useDeleteBookmark();
 
   const fetchContent = useFetchItemContent();
-  const deleteStandalone = useDeleteStandaloneArticle();
+  const deleteItem = useDeleteItem();
 
   const articleIds = listArticles.map((a) => a.id);
 
@@ -87,7 +87,6 @@ export function ArticleDrawer() {
   const shouldFetchArticle =
     selectedArticleId !== null &&
     selectedArticleId > 0 &&
-    !isStandaloneMode &&
     (isStarredMode || storeArticle === null);
   const { data: fetchedArticle } = useItem(
     selectedArticleId,
@@ -97,9 +96,9 @@ export function ArticleDrawer() {
   const article: Item | null =
     (isStarredMode ? fetchedArticle ?? storeArticle : storeArticle ?? fetchedArticle) ??
     null;
-  const isStandalone = article !== null && article.feed_id <= 0 && !isStarredMode;
+  const isStandalone = article !== null && article.feed_id > 0 && getFeedById(article.feed_id)?.link === standaloneFeedLink;
   const canToggleRead =
-    article !== null && article.id > 0 && !isStandalone && (!isStarredMode || fetchedArticle !== undefined);
+    article !== null && article.id > 0 && (!isStarredMode || fetchedArticle !== undefined);
   const feed = article ? getFeedById(article.feed_id) : null;
   const bookmark = article ? getBookmarkByItemId(article.id) : null;
   const starred = article ? isItemStarred(article.id) : false;
@@ -154,13 +153,13 @@ export function ArticleDrawer() {
     }
   };
 
-  const handleRemoveStandalone = async () => {
-    if (!article || !isStandalone) return;
+  const handleRemove = async () => {
+    if (!article) return;
     try {
-      await deleteStandalone.mutateAsync(article.id);
+      await deleteItem.mutateAsync(article.id);
       setSelectedArticle(null);
     } catch (error) {
-      console.error("Failed to remove standalone article:", error);
+      console.error("Failed to remove article:", error);
     }
   };
 
@@ -201,24 +200,22 @@ export function ArticleDrawer() {
             {/* Header */}
             <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
               <div className="flex items-center gap-2">
-                {!isStandalone && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToggleRead}
-                    disabled={!canToggleRead}
-                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                  >
-                    {article.unread ? (
-                      <Circle className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <CircleCheck className="h-4 w-4 text-primary" />
-                    )}
-                    {article.unread
-                      ? t("article.action.markRead")
-                      : t("article.action.markUnread")}
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleRead}
+                  disabled={!canToggleRead}
+                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                >
+                  {article.unread ? (
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <CircleCheck className="h-4 w-4 text-primary" />
+                  )}
+                  {article.unread
+                    ? t("article.action.markRead")
+                    : t("article.action.markUnread")}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -230,30 +227,28 @@ export function ArticleDrawer() {
                   />
                   {starred ? t("article.action.unstar") : t("article.action.star")}
                 </Button>
-                {!isStandalone && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleFetchContent}
-                    disabled={fetchContent.isPending || (!!article.full_content)}
-                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                  >
-                    <FileText className={`h-4 w-4 ${fetchContent.isPending ? "animate-pulse" : ""}`} />
-                    {fetchContent.isPending
-                      ? t("article.action.fetchingContent")
-                      : t("article.action.fetchContent")}
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchContent}
+                  disabled={fetchContent.isPending || (!!article.full_content)}
+                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                >
+                  <FileText className={`h-4 w-4 ${fetchContent.isPending ? "animate-pulse" : ""}`} />
+                  {fetchContent.isPending
+                    ? t("article.action.fetchingContent")
+                    : t("article.action.fetchContent")}
+                </Button>
                 {isStandalone && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleRemoveStandalone}
-                    disabled={deleteStandalone.isPending}
+                    onClick={handleRemove}
+                    disabled={deleteItem.isPending}
                     className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
-                    {deleteStandalone.isPending
+                    {deleteItem.isPending
                       ? t("common.deleting")
                       : t("standalone.remove")}
                   </Button>
@@ -320,12 +315,6 @@ export function ArticleDrawer() {
                           {feed?.name ?? bookmark?.feed_name ?? t("common.unknown")}
                         </span>
                       </button>
-                    ) : isStandalone ? (
-                      <span className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                        <span className="truncate">
-                          {getLinkDomain(article.link)}
-                        </span>
-                      </span>
                     ) : (
                       <span className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                         <span className="truncate">

@@ -71,16 +71,6 @@ type Item struct {
 	CreatedAt   int64  `json:"created_at"`
 }
 
-// StandaloneArticle represents a user-submitted article with auto-fetched content.
-type StandaloneArticle struct {
-	ID        int64  `json:"id"`
-	Link      string `json:"link"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
-	PubDate   int64  `json:"pub_date"`
-	CreatedAt int64  `json:"created_at"`
-}
-
 // Bookmark represents a saved item snapshot.
 type Bookmark struct {
 	ID        int64  `json:"id"`
