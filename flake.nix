@@ -40,10 +40,10 @@
           subPackages = [ "cmd/fusion" ];
           ldflags = [ "-s" "-w" ];
 
-          preBuild = ''
-            rm -rf internal/web/dist
-            mkdir -p internal/web/dist
-            cp -r ${frontendDist}/* internal/web/dist/
+          postPatch = ''
+            rm -rf backend/internal/web/dist
+            mkdir -p backend/internal/web/dist
+            cp -r ${frontendDist}/* backend/internal/web/dist/
           '';
         };
 
