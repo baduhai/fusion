@@ -82,7 +82,10 @@ export function useUrlState() {
         return;
       }
 
-      if (pathname === "/standalone") {
+      if (pathname === "/standalone" &&
+          nextFeedId === selectedFeedId &&
+          nextGroupId === selectedGroupId &&
+          nextFilter === articleFilter) {
         navigate({
           to: "/standalone",
           search: nextSearch,

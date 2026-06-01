@@ -58,7 +58,7 @@ export function FeedList() {
     {
       value: "unread",
       label: t("article.filter.unread"),
-      count: totalUnread + standaloneUnreadCount,
+      count: totalUnread,
       icon: Inbox,
     },
     {
@@ -70,7 +70,7 @@ export function FeedList() {
     {
       value: "all",
       label: t("article.filter.all"),
-      count: totalUnread + standaloneUnreadCount,
+      count: totalUnread,
       icon: Layers,
     },
   ];

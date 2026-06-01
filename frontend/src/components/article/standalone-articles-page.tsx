@@ -213,6 +213,31 @@ export function StandaloneArticlesPage() {
                           size="icon-sm"
                           onClick={async (e) => {
                             e.stopPropagation();
+                            await handleToggleRead(article);
+                          }}
+                          className="bg-muted"
+                          aria-label={
+                            article.unread
+                              ? t("article.action.markRead")
+                              : t("article.action.markUnread")
+                          }
+                          title={
+                            article.unread
+                              ? t("article.action.markRead")
+                              : t("article.action.markUnread")
+                          }
+                        >
+                          {article.unread ? (
+                            <Circle className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : (
+                            <CircleCheck className="h-3.5 w-3.5 text-primary" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             await handleToggleStar(article);
                           }}
                           className={cn(
