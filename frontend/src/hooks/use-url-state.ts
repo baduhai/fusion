@@ -82,18 +82,6 @@ export function useUrlState() {
         return;
       }
 
-      if (pathname === "/standalone" &&
-          nextFeedId === selectedFeedId &&
-          nextGroupId === selectedGroupId &&
-          nextFilter === articleFilter) {
-        navigate({
-          to: "/standalone",
-          search: nextSearch,
-          replace: replace ?? true,
-        });
-        return;
-      }
-
       navigate({
         to: "/$filter",
         params: { filter: nextFilter },
@@ -136,7 +124,20 @@ export function useUrlState() {
   const setSelectedArticle = useCallback(
     (articleId: number | null) => {
       if (articleId === null) {
+        if (pathname === "/standalone") {
+          navigate({ to: "/standalone", search: {}, replace: true });
+          return;
+        }
         navigateToList({ articleId: null, replace: true });
+        return;
+      }
+
+      if (pathname === "/standalone") {
+        navigate({
+          to: "/standalone",
+          search: { article: articleId },
+          replace: selectedArticleId !== null,
+        });
         return;
       }
 
@@ -145,7 +146,7 @@ export function useUrlState() {
         replace: selectedArticleId !== null,
       });
     },
-    [navigateToList, selectedArticleId],
+    [navigate, navigateToList, pathname, selectedArticleId],
   );
 
   const setArticleFilter = useCallback(
