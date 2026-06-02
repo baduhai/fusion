@@ -142,18 +142,20 @@ export function FeedList() {
 
         {/* Feed groups */}
         <div className="w-full min-w-0 space-y-0.5">
-          {groups.map((group) => {
-            const groupFeeds = getRegularFeedsByGroup(group.id);
+          {groups
+            .filter((group) => getRegularFeedsByGroup(group.id).length > 0)
+            .map((group) => {
+              const groupFeeds = getRegularFeedsByGroup(group.id);
 
-            return (
-              <FeedGroup
-                key={group.id}
-                groupId={group.id}
-                name={group.name}
-                feeds={groupFeeds}
-              />
-            );
-          })}
+              return (
+                <FeedGroup
+                  key={group.id}
+                  groupId={group.id}
+                  name={group.name}
+                  feeds={groupFeeds}
+                />
+              );
+            })}
         </div>
       </div>
     </ScrollArea>

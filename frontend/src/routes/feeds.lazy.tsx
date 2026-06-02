@@ -51,6 +51,8 @@ export const Route = createLazyFileRoute("/feeds")({
   component: FeedsPage,
 });
 
+const standaloneFeedLink = "fusion://standalone";
+
 type StatusFilter = "all" | "error" | "paused";
 
 function FeedsPage() {
@@ -96,10 +98,16 @@ function FeedsPage() {
 
   const isFiltering = searchQuery.trim() !== "" || statusFilter !== "all";
 
+  const regularFeeds = useMemo(
+    () => feeds.filter((f) => f.link !== standaloneFeedLink),
+    [feeds],
+  );
+
   const groupedFeeds = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
 
     const matchesFeed = (feed: Feed) => {
+      if (feed.link === standaloneFeedLink) return false;
       if (
         query &&
         !feed.name.toLowerCase().includes(query) &&
@@ -200,7 +208,7 @@ function FeedsPage() {
   );
 
   const totalVisible = groupedFeeds.reduce((sum, g) => sum + g.feeds.length, 0);
-  const hasNoFeeds = !isFeedsLoading && feeds.length === 0;
+  const hasNoFeeds = !isFeedsLoading && regularFeeds.length === 0;
   const deletingGroupMoveHint = useMemo(() => {
     if (!deletingGroup) {
       return "";
@@ -229,7 +237,7 @@ function FeedsPage() {
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Rss className="h-4 w-4" />
             <span className="font-medium">
-              {t("feeds.count", { count: feeds.length })}
+              {t("feeds.count", { count: regularFeeds.length })}
             </span>
           </div>
         </ContentHeader>
@@ -427,7 +435,7 @@ function FeedsPage() {
           <DialogHeader>
             <DialogTitle>{t("feeds.refreshDialog.title")}</DialogTitle>
             <DialogDescription>
-              {t("feeds.refreshDialog.description", { count: feeds.length })}
+              {t("feeds.refreshDialog.description", { count: regularFeeds.length })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
