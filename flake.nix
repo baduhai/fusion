@@ -9,8 +9,14 @@
   outputs = { self, nixpkgs, flake-utils }:
     {
       nixosModules = {
-        default = import ./nix/module.nix;
-        fusion = import ./nix/module.nix;
+        default = { self, ... }: {
+          imports = [ ./nix/module.nix ];
+          nixpkgs.overlays = [ self.overlays.default ];
+        };
+        fusion = { self, ... }: {
+          imports = [ ./nix/module.nix ];
+          nixpkgs.overlays = [ self.overlays.default ];
+        };
       };
 
       overlays.default = final: prev: {

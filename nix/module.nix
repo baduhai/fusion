@@ -16,7 +16,7 @@ in
     package = mkOption {
       type = types.package;
       defaultText = lib.literalExpression "pkgs.fusion";
-      description = "The fusion package to use. Set this directly, or add `fusion.overlays.default` to nixpkgs overlays.";
+      description = "The fusion package to use.";
     };
 
 

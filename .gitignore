@@ -16,7 +16,6 @@ backend/internal/web/dist/*
 # .envrc is a direnv configuration file, not a secret env file.
 !.envrc
 backend/fusion
-shell.nix
 .direnv/
 .playwright-mcp/
 result
