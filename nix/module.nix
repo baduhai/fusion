@@ -196,6 +196,7 @@ in
           lib.optional (cfg.passwordFile != null) "fusion-password:${cfg.passwordFile}"
           ++ lib.optional (cfg.oidc.clientSecretFile != null) "oidc-secret:${cfg.oidc.clientSecretFile}"
         );
+        EnvironmentFile = [ "/run/fusion/env" ];
       };
 
       preStart = ''
@@ -206,10 +207,6 @@ in
           echo "FUSION_OIDC_CLIENT_SECRET=$(cat "$CREDENTIALS_DIRECTORY/oidc-secret")" >> /run/fusion/env
         ''}
       '';
-
-      environmentFile = mkIf (cfg.passwordFile != null || cfg.oidc.clientSecretFile != null) [
-        "/run/fusion/env"
-      ];
     };
   })
   ];
