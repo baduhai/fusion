@@ -77,6 +77,8 @@ export const enMessages = {
   "login.signIn": "Sign in",
   "login.signingIn": "Signing in...",
   "sidebar.manageFeeds": "Manage Feeds",
+  "sidebar.refreshFeed": "Refresh feed",
+  "sidebar.refreshGroup": "Refresh group",
   "sidebar.search": "Search",
   "sidebar.settings": "Settings",
   "sidebar.addStandaloneArticle": "Add Article",

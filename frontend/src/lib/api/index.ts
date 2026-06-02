@@ -54,6 +54,8 @@ export const groupAPI = {
     api.patch<APIResponse<Group>>(`/groups/${id}`, data),
 
   delete: (id: number) => api.delete<void>(`/groups/${id}`),
+
+  refreshFeeds: (id: number) => api.post<void>(`/groups/${id}/refresh`),
 };
 
 // Feed APIs
@@ -74,6 +76,8 @@ export const feedAPI = {
     api.post<APIResponse<ValidateFeedResponse>>("/feeds/validate", data),
 
   refresh: () => api.post<void>("/feeds/refresh"),
+
+  refreshFeed: (id: number) => api.post<void>(`/feeds/${id}/refresh`),
 
   batchCreate: (data: BatchCreateFeedsRequest) =>
     api.post<APIResponse<BatchCreateFeedsResponse>>("/feeds/batch", data),

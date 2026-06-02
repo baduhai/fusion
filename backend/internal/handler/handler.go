@@ -119,6 +119,7 @@ func (h *Handler) SetupRouter() *gin.Engine {
 			auth.GET("/groups/:id", h.getGroup)
 			auth.PATCH("/groups/:id", h.updateGroup)
 			auth.DELETE("/groups/:id", h.deleteGroup)
+			auth.POST("/groups/:id/refresh", h.refreshGroupFeeds)
 
 			auth.GET("/feeds", h.listFeeds)
 			auth.POST("/feeds", h.createFeed)

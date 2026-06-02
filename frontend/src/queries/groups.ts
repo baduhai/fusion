@@ -67,3 +67,14 @@ export function useDeleteGroup() {
     },
   });
 }
+
+export function useRefreshGroupFeeds() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => groupAPI.refreshFeeds(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.all });
+      qc.invalidateQueries({ queryKey: queryKeys.items.all });
+    },
+  });
+}

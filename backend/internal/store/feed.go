@@ -80,6 +80,77 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 	return feeds, rows.Err()
 }
 
+func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
+	rows, err := s.db.Query(`
+		SELECT f.id, f.group_id, f.name, f.link, f.site_url,
+		       f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		       COALESCE(fs.etag, ''), COALESCE(fs.last_modified, ''), COALESCE(fs.cache_control, ''),
+		       COALESCE(fs.expires_at, 0), COALESCE(fs.last_checked_at, 0), COALESCE(fs.next_check_at, 0),
+		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
+		       COALESCE(fs.last_error_at, 0), COALESCE(fs.last_error, ''), COALESCE(fs.consecutive_failures, 0),
+		       COALESCE(SUM(CASE WHEN i.unread = 1 THEN 1 ELSE 0 END), 0) AS unread_count,
+		       COALESCE(COUNT(i.id), 0) AS item_count
+		FROM feeds f
+		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
+		LEFT JOIN items i ON i.feed_id = f.id
+		WHERE f.group_id = :group_id
+		GROUP BY f.id, f.group_id, f.name, f.link, f.site_url,
+		         f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		         fs.etag, fs.last_modified, fs.cache_control, fs.expires_at, fs.last_checked_at,
+		         fs.next_check_at, fs.last_http_status, fs.retry_after_until, fs.last_success_at,
+		         fs.last_error_at, fs.last_error, fs.consecutive_failures
+		ORDER BY f.id
+	`, sql.Named("group_id", groupID))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	feeds := []*model.Feed{}
+	for rows.Next() {
+		f := &model.Feed{}
+		var suspended int
+		var autoFetchContent int
+		var refreshIntervalNull sql.NullInt64
+		if err := rows.Scan(
+			&f.ID,
+			&f.GroupID,
+			&f.Name,
+			&f.Link,
+			&f.SiteURL,
+			&suspended,
+			&f.Proxy,
+			&refreshIntervalNull,
+			&autoFetchContent,
+			&f.CreatedAt,
+			&f.UpdatedAt,
+			&f.FetchState.ETag,
+			&f.FetchState.LastModified,
+			&f.FetchState.CacheControl,
+			&f.FetchState.ExpiresAt,
+			&f.FetchState.LastCheckedAt,
+			&f.FetchState.NextCheckAt,
+			&f.FetchState.LastHTTPStatus,
+			&f.FetchState.RetryAfterUntil,
+			&f.FetchState.LastSuccessAt,
+			&f.FetchState.LastErrorAt,
+			&f.FetchState.LastError,
+			&f.FetchState.ConsecutiveFailures,
+			&f.UnreadCount,
+			&f.ItemCount,
+		); err != nil {
+			return nil, err
+		}
+		f.Suspended = intToBool(suspended)
+		f.AutoFetchContent = intToBool(autoFetchContent)
+		if refreshIntervalNull.Valid {
+			f.RefreshInterval = &refreshIntervalNull.Int64
+		}
+		feeds = append(feeds, f)
+	}
+	return feeds, rows.Err()
+}
+
 func (s *Store) GetFeedByLink(link string) (*model.Feed, error) {
 	f := &model.Feed{}
 	var suspended int

@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/0x2E/fusion/internal/store"
 	"github.com/gin-gonic/gin"
@@ -115,4 +118,40 @@ func (h *Handler) deleteGroup(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) refreshGroupFeeds(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		badRequestError(c, "invalid id")
+		return
+	}
+
+	if _, err := h.store.GetGroup(id); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			notFoundError(c, "group")
+			return
+		}
+		internalError(c, err, "get group for refresh")
+		return
+	}
+
+	feeds, err := h.store.ListFeedsByGroup(id)
+	if err != nil {
+		internalError(c, err, "list feeds by group")
+		return
+	}
+
+	refreshTimeout := time.Duration(h.config.PullTimeout) * time.Second
+	for _, feed := range feeds {
+		go func(feedID int64) {
+			ctx, cancel := context.WithTimeout(context.Background(), refreshTimeout)
+			defer cancel()
+			if err := h.puller.RefreshFeed(ctx, feedID); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+				slog.Warn("refresh feed failed", "feed_id", feedID, "error", err)
+			}
+		}(feed.ID)
+	}
+
+	c.Status(http.StatusAccepted)
 }
