@@ -1,5 +1,4 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { defaultArticleFilter } from "@/lib/article-filter";
 import { parsePositiveIntegerParam } from "@/lib/route-params";
 
 export const Route = createFileRoute("/groups/$groupId")({
@@ -8,7 +7,7 @@ export const Route = createFileRoute("/groups/$groupId")({
     if (groupId === null) {
       throw redirect({
         to: "/$filter",
-        params: { filter: defaultArticleFilter },
+        params: { filter: "all" },
         replace: true,
       });
     }
@@ -22,7 +21,7 @@ export const Route = createFileRoute("/groups/$groupId")({
       to: "/groups/$groupId/$filter",
       params: {
         groupId: String(groupId),
-        filter: defaultArticleFilter,
+        filter: "all",
       },
       replace: true,
     });

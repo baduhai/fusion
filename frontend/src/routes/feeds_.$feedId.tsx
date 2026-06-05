@@ -1,5 +1,4 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { defaultArticleFilter } from "@/lib/article-filter";
 import { parsePositiveIntegerParam } from "@/lib/route-params";
 
 export const Route = createFileRoute("/feeds_/$feedId")({
@@ -8,7 +7,7 @@ export const Route = createFileRoute("/feeds_/$feedId")({
     if (feedId === null) {
       throw redirect({
         to: "/$filter",
-        params: { filter: defaultArticleFilter },
+        params: { filter: "all" },
         replace: true,
       });
     }
@@ -22,7 +21,7 @@ export const Route = createFileRoute("/feeds_/$feedId")({
       to: "/feeds/$feedId/$filter",
       params: {
         feedId: String(feedId),
-        filter: defaultArticleFilter,
+        filter: "all",
       },
       replace: true,
     });

@@ -111,7 +111,7 @@ export function ArticleDrawer() {
   const autoMarkedRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!article || !article.unread || !autoMarkRead || !canToggleRead) {
+    if (!article || !article.unread || article.archived || !autoMarkRead || !canToggleRead) {
       return;
     }
 
@@ -263,7 +263,8 @@ export function ArticleDrawer() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.stopPropagation();
                       try {
                         await markUnread.mutateAsync([article.id]);
                       } catch (error) {
