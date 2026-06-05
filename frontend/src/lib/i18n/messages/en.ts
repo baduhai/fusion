@@ -195,6 +195,7 @@ export const enMessages = {
   "article.action.star": "Star",
   "article.action.unstar": "Unstar",
   "article.action.archive": "Archive",
+  "article.action.addToInbox": "Add to inbox",
   "article.action.unarchive": "Unarchive",
   "article.readingTime.lessThanOne": "< 1 min read",
   "article.readingTime.minutes": "{minutes} min read",

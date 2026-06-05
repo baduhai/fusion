@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
+  Inbox,
   Star,
   Trash2,
   X,
@@ -258,6 +259,23 @@ export function ArticleDrawer() {
                     ? t("article.action.markRead")
                     : t("article.action.markUnread")}
                 </Button>
+                {(!article.unread || article.archived) && canToggleRead && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await markUnread.mutateAsync([article.id]);
+                      } catch (error) {
+                        console.error("Failed to add to inbox:", error);
+                      }
+                    }}
+                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                  >
+                    <Inbox className="h-4 w-4" />
+                    {t("article.action.addToInbox")}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
