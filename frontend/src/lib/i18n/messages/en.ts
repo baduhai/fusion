@@ -194,6 +194,8 @@ export const enMessages = {
   "article.action.remove": "Remove",
   "article.action.star": "Star",
   "article.action.unstar": "Unstar",
+  "article.readingTime.lessThanOne": "< 1 min read",
+  "article.readingTime.minutes": "{minutes} min read",
   "article.feedFallback": "Feed",
   "article.filter.all": "All",
   "article.filter.starred": "Starred",

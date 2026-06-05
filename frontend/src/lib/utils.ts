@@ -71,3 +71,13 @@ export function extractSummary(html: string, maxLength = 120): string {
   // Truncate and add ellipsis
   return text.slice(0, maxLength).trimEnd() + "…";
 }
+
+const WORDS_PER_MINUTE = 238;
+
+export function estimateReadingTimeMinutes(html: string): number {
+  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  const text = clean.replace(/\s+/g, " ").trim();
+  if (!text) return 0;
+  const wordCount = text.split(/\s+/).length;
+  return Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE));
+}

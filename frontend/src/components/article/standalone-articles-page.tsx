@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18n } from "@/lib/i18n";
-import { cn, formatDate, extractSummary } from "@/lib/utils";
+import { cn, formatDate, extractSummary, estimateReadingTimeMinutes } from "@/lib/utils";
 import { toSafeExternalUrl } from "@/lib/safe-url";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useItems, useMarkItemsRead, useMarkItemsUnread, useDeleteItem } from "@/queries/items";
@@ -254,6 +254,15 @@ export function StandaloneArticlesPage() {
                               </span>
                             </>
                           )}
+                          <span className="text-muted-foreground">·</span>
+                          <span className="shrink-0 text-muted-foreground">
+                            {(() => {
+                              const mins = estimateReadingTimeMinutes(article.full_content || article.content);
+                              return mins < 1
+                                ? t("article.readingTime.lessThanOne")
+                                : t("article.readingTime.minutes", { minutes: mins });
+                            })()}
+                          </span>
                         </div>
                       </div>
 
