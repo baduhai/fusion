@@ -7,7 +7,7 @@ interface SwipeConfig {
   minThreshold?: number;
 }
 
-type SwipeState = "idle" | "dragging" | "triggered";
+type SwipeState = "idle" | "dragging";
 
 export function useSwipe(config: SwipeConfig) {
   const { onSwipeLeft, onSwipeRight, threshold = 0.4, minThreshold = 80 } =
@@ -52,17 +52,12 @@ export function useSwipe(config: SwipeConfig) {
     const currentOffsetX = offsetXRef.current;
 
     if (currentOffsetX > effectiveThreshold && onSwipeRight) {
-      setOffsetX(width);
-      setState("triggered");
       onSwipeRight();
     } else if (currentOffsetX < -effectiveThreshold && onSwipeLeft) {
-      setOffsetX(-width);
-      setState("triggered");
       onSwipeLeft();
-    } else {
-      setOffsetX(0);
-      setState("idle");
     }
+    setOffsetX(0);
+    setState("idle");
   }, [threshold, minThreshold, onSwipeLeft, onSwipeRight]);
 
   return { offsetX, state, containerRef, onTouchStart, onTouchMove, onTouchEnd };

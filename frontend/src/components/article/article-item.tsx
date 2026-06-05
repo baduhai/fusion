@@ -177,7 +177,7 @@ export function ArticleItem({
         }}
         className={cn(
           "relative bg-background transition-transform",
-          state === "triggered" ? "duration-300" : state === "idle" ? "duration-200" : "",
+          state === "idle" ? "duration-200" : "",
           "group flex w-full cursor-pointer items-start gap-4 border-b px-4 py-4 text-left hover:bg-accent/50",
           isSelected && "bg-accent",
         )}

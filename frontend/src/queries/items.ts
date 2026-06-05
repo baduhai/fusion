@@ -240,6 +240,7 @@ export function useArchiveItems() {
     },
     onSettled: async () => {
       await qc.invalidateQueries({ queryKey: queryKeys.items.all });
+      await qc.invalidateQueries({ queryKey: queryKeys.feeds.all });
     },
   });
 }
@@ -254,6 +255,7 @@ export function useUnarchiveItems() {
     },
     onSettled: async () => {
       await qc.invalidateQueries({ queryKey: queryKeys.items.all });
+      await qc.invalidateQueries({ queryKey: queryKeys.feeds.all });
     },
   });
 }
