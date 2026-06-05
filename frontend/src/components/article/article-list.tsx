@@ -315,7 +315,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
           <h2 className="truncate text-lg font-semibold">{title}</h2>
         </div>
         <div className="flex items-center gap-2">
-          {articleFilter === "inbox" && (
+          {articleFilter === "inbox" && !isStandalone && (
             <Button
               variant="outline"
               size="sm"
