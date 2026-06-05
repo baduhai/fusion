@@ -9,6 +9,8 @@ interface SwipeConfig {
 
 type SwipeState = "idle" | "dragging" | "revealing";
 
+const REVEAL_DISTANCE = 120;
+
 export function useSwipe(config: SwipeConfig) {
   const { onSwipeLeft, onSwipeRight, threshold = 0.4, minThreshold = 80 } =
     config;
@@ -18,6 +20,7 @@ export function useSwipe(config: SwipeConfig) {
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const draggingRef = useRef(false);
+  const offsetXRef = useRef(0);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetPosition = useCallback(() => {
@@ -25,6 +28,7 @@ export function useSwipe(config: SwipeConfig) {
       clearTimeout(revealTimeoutRef.current);
       revealTimeoutRef.current = null;
     }
+    offsetXRef.current = 0;
     setOffsetX(0);
     setState("idle");
   }, []);
@@ -46,6 +50,7 @@ export function useSwipe(config: SwipeConfig) {
     const deltaY = e.touches[0].clientY - startYRef.current;
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault();
+      offsetXRef.current = deltaX;
       setOffsetX(deltaX);
     }
   }, []);
@@ -60,19 +65,23 @@ export function useSwipe(config: SwipeConfig) {
     }
     const width = container.offsetWidth;
     const effectiveThreshold = Math.max(width * threshold, minThreshold);
+    const currentOffsetX = offsetXRef.current;
 
-    if (offsetX > effectiveThreshold && onSwipeRight) {
+    if (currentOffsetX > effectiveThreshold && onSwipeRight) {
       onSwipeRight();
-      // Brief reveal: slide to show icon, then snap back
-      setOffsetX(80);
+      const reveal = Math.sign(currentOffsetX) * REVEAL_DISTANCE;
+      offsetXRef.current = reveal;
+      setOffsetX(reveal);
       setState("revealing");
       revealTimeoutRef.current = setTimeout(() => {
         setOffsetX(0);
         setState("idle");
       }, 350);
-    } else if (offsetX < -effectiveThreshold && onSwipeLeft) {
+    } else if (currentOffsetX < -effectiveThreshold && onSwipeLeft) {
       onSwipeLeft();
-      setOffsetX(-80);
+      const reveal = Math.sign(currentOffsetX) * REVEAL_DISTANCE;
+      offsetXRef.current = reveal;
+      setOffsetX(reveal);
       setState("revealing");
       revealTimeoutRef.current = setTimeout(() => {
         setOffsetX(0);
@@ -81,7 +90,7 @@ export function useSwipe(config: SwipeConfig) {
     } else {
       resetPosition();
     }
-  }, [offsetX, threshold, minThreshold, onSwipeLeft, onSwipeRight, resetPosition]);
+  }, [threshold, minThreshold, onSwipeLeft, onSwipeRight, resetPosition]);
 
   const onTouchCancel = useCallback(() => {
     draggingRef.current = false;
