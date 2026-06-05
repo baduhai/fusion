@@ -52,6 +52,8 @@ export const enMessages = {
   "settings.about.installing": "Installing...",
   "settings.about.license": "MIT License © 2024 Rook1e",
   "settings.about.reportIssue": "Report Issue",
+  "settings.autoMarkRead.description": "Automatically mark articles as read after scrolling through most of the page",
+  "settings.autoMarkRead.label": "Auto mark as read",
   "settings.articlePageSize.description": "Number of articles fetched each time",
   "settings.articlePageSize.label": "Articles per load",
   "settings.installCancelled": "Installation cancelled",

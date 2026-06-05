@@ -39,6 +39,7 @@ const defaultLocale: AppLocale =
     resolveSupportedLocale(navigator.language)) ||
   "en";
 const defaultArticlePageSize: ArticlePageSize = 10;
+const defaultAutoMarkRead = true;
 
 function normalizeLocale(locale: string): AppLocale {
   const supportedLocale = resolveSupportedLocale(locale);
@@ -60,8 +61,10 @@ function normalizeArticlePageSize(size: number): ArticlePageSize {
 export interface PreferencesState {
   locale: AppLocale;
   articlePageSize: ArticlePageSize;
+  autoMarkRead: boolean;
   setLocale: (locale: string) => void;
   setArticlePageSize: (size: number) => void;
+  setAutoMarkRead: (enabled: boolean) => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -69,9 +72,11 @@ export const usePreferencesStore = create<PreferencesState>()(
     (set) => ({
       locale: defaultLocale,
       articlePageSize: defaultArticlePageSize,
+      autoMarkRead: defaultAutoMarkRead,
       setLocale: (locale) => set({ locale: normalizeLocale(locale) }),
       setArticlePageSize: (size) =>
         set({ articlePageSize: normalizeArticlePageSize(size) }),
+      setAutoMarkRead: (enabled) => set({ autoMarkRead: enabled }),
     }),
     {
       name: "fusion-preferences",
@@ -79,6 +84,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       partialize: (state) => ({
         locale: state.locale,
         articlePageSize: state.articlePageSize,
+        autoMarkRead: state.autoMarkRead,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PreferencesState> | undefined;
@@ -89,6 +95,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           articlePageSize: normalizeArticlePageSize(
             persisted?.articlePageSize ?? currentState.articlePageSize,
           ),
+          autoMarkRead: persisted?.autoMarkRead ?? currentState.autoMarkRead,
         };
       },
     },

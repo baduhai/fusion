@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   Circle,
   CircleCheck,
@@ -32,6 +32,7 @@ import {
 } from "@/queries/bookmarks";
 import { useArticleNavigation } from "@/hooks/use-keyboard";
 import { useI18n } from "@/lib/i18n";
+import { usePreferencesStore } from "@/store";
 import { formatDate } from "@/lib/utils";
 import { processArticleContent } from "@/lib/content";
 import { getFaviconUrl } from "@/lib/api/favicon";
@@ -103,6 +104,47 @@ export function ArticleDrawer() {
   const bookmark = article ? getBookmarkByItemId(article.id) : null;
   const starred = article ? isItemStarred(article.id) : false;
   const safeArticleLink = article ? toSafeExternalUrl(article.link) : null;
+
+  const autoMarkRead = usePreferencesStore((s) => s.autoMarkRead);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const autoMarkedRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!article || !article.unread || !autoMarkRead || !canToggleRead) {
+      return;
+    }
+
+    if (autoMarkedRef.current === article.id) {
+      return;
+    }
+
+    const viewport = scrollAreaRef.current?.querySelector<HTMLDivElement>(
+      '[data-slot="scroll-area-viewport"]',
+    );
+    if (!viewport) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = viewport;
+      if (clientHeight === 0) return;
+      if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+        autoMarkedRef.current = article.id;
+        markRead.mutateAsync([article.id]).catch(() => {});
+      }
+    };
+
+    viewport.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      viewport.removeEventListener("scroll", handleScroll);
+    };
+  }, [article, article?.id, autoMarkRead, canToggleRead, markRead]);
+
+  const prevArticleIdRef = useRef<number | null>(null);
+  if (article?.id !== prevArticleIdRef.current) {
+    prevArticleIdRef.current = article?.id ?? null;
+    autoMarkedRef.current = null;
+  }
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -292,7 +334,7 @@ export function ArticleDrawer() {
             </div>
 
             {/* Content */}
-            <ScrollArea className="min-h-0 flex-1">
+            <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1">
               <article className="min-w-0 px-5 py-6 sm:px-12 sm:py-8">
                 <div className="space-y-3">
                   <h1 className="text-[28px] font-bold leading-[1.3]">

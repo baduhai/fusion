@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Bug, Download, Github, Info, Keyboard, Palette } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -52,7 +53,7 @@ function AppearanceContent() {
   const { theme, setTheme } = useTheme();
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
-  const { locale, articlePageSize, setLocale, setArticlePageSize } =
+  const { locale, articlePageSize, autoMarkRead, setLocale, setArticlePageSize, setAutoMarkRead } =
     usePreferencesStore();
 
   return (
@@ -109,6 +110,22 @@ function AppearanceContent() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Auto mark as read */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium">
+            {t("settings.autoMarkRead.label")}
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            {t("settings.autoMarkRead.description")}
+          </p>
+        </div>
+        <Switch
+          checked={autoMarkRead}
+          onCheckedChange={setAutoMarkRead}
+        />
       </div>
 
       {/* Theme */}
