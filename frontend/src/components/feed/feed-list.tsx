@@ -1,11 +1,10 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Inbox, Layers, Star } from "lucide-react";
+import { BookOpen, Inbox, Layers } from "lucide-react";
 import { useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isArticleFilter } from "@/lib/article-filter";
 import { useGroups } from "@/queries/groups";
 import { useFeedLookup, useUnreadCounts } from "@/queries/feeds";
-import { useBookmarkLookup } from "@/queries/bookmarks";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -18,7 +17,6 @@ export function FeedList() {
   const { data: groups = [], isLoading } = useGroups();
   const { feeds } = useFeedLookup();
   const { getTotalUnreadCount } = useUnreadCounts();
-  const { bookmarks } = useBookmarkLookup();
   const {
     selectedFeedId,
     selectedGroupId,
@@ -33,7 +31,6 @@ export function FeedList() {
   const isTopLevelSelected =
     isOnHomePage && selectedFeedId === null && selectedGroupId === null;
   const totalUnread = getTotalUnreadCount();
-  const starredCount = bookmarks.length;
 
   const standaloneFeed = useMemo(
     () => feeds.find((f) => f.link === standaloneFeedLink),
@@ -50,22 +47,16 @@ export function FeedList() {
     regularFeeds.filter((f) => f.group_id === groupId);
 
   const topFilters: Array<{
-    value: "all" | "unread" | "starred";
+    value: "all" | "inbox";
     label: string;
     count: number;
     icon: typeof Inbox;
   }> = [
     {
-      value: "unread",
-      label: t("article.filter.unread"),
+      value: "inbox",
+      label: t("article.filter.inbox"),
       count: totalUnread,
       icon: Inbox,
-    },
-    {
-      value: "starred",
-      label: t("article.filter.starred"),
-      count: starredCount,
-      icon: Star,
     },
     {
       value: "all",
