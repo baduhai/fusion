@@ -1,4 +1,4 @@
-import { Circle, CircleCheck, Star, ExternalLink } from "lucide-react";
+import { Circle, CircleCheck, Star, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { cn, formatDate, extractSummary, estimateReadingTimeMinutes } from "@/lib/utils";
@@ -16,6 +16,7 @@ interface ArticleItemProps {
   isStarred: boolean;
   feedName: string;
   feedFaviconUrl: string | null;
+  onRemove?: (id: number) => Promise<void>;
 }
 
 export function ArticleItem({
@@ -28,6 +29,7 @@ export function ArticleItem({
   isStarred,
   feedName,
   feedFaviconUrl,
+  onRemove,
 }: ArticleItemProps) {
   const { t } = useI18n();
 
@@ -59,6 +61,16 @@ export function ArticleItem({
       await onToggleStar(article);
     } catch (error) {
       console.error("Failed to toggle star:", error);
+    }
+  };
+
+  const handleRemove = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onRemove) return;
+    try {
+      await onRemove(article.id);
+    } catch (error) {
+      console.error("Failed to remove article:", error);
     }
   };
 
@@ -150,6 +162,18 @@ export function ArticleItem({
             )}
           />
         </Button>
+        {onRemove && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleRemove}
+            className="bg-muted"
+            aria-label={t("article.action.remove")}
+            title={t("article.action.remove")}
+          >
+            <Trash2 className="text-destructive" />
+          </Button>
+        )}
         {safeArticleLink ? (
           <Button
             asChild

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCheck, Loader2 } from "lucide-react";
+import { CheckCheck, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import {
   useItems,
   useMarkItemsRead,
   useMarkItemsUnread,
+  useDeleteItem,
 } from "@/queries/items";
 import { useFeedLookup } from "@/queries/feeds";
 import { useGroups } from "@/queries/groups";
@@ -27,9 +28,15 @@ import {
 import { queryKeys } from "@/queries/keys";
 import { getFaviconUrl } from "@/lib/api/favicon";
 import { useI18n } from "@/lib/i18n";
+import { useUIStore } from "@/store";
+import { toast } from "sonner";
 import type { Item } from "@/lib/api";
 
-export function ArticleList() {
+interface ArticleListProps {
+  standaloneFeedId?: number;
+}
+
+export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const {
@@ -45,12 +52,19 @@ export function ArticleList() {
     Record<number, boolean>
   >({});
 
+  const isStandalone = standaloneFeedId !== undefined;
+  const deleteItem = useDeleteItem();
+  const { setAddStandaloneOpen } = useUIStore();
+
   const isStarredMode = articleFilter === "starred";
+
+  const effectiveFeedId = isStandalone ? standaloneFeedId : selectedFeedId;
+  const effectiveGroupId = isStandalone ? null : selectedGroupId;
 
   // Items query for non-starred modes
   const itemsQuery = useItems({
-    feedId: selectedFeedId,
-    groupId: selectedGroupId,
+    feedId: effectiveFeedId,
+    groupId: effectiveGroupId,
     unread: articleFilter === "unread" ? true : undefined,
   });
 
@@ -69,8 +83,8 @@ export function ArticleList() {
   );
 
   const starredArticles = useStarredItems({
-    feedId: selectedFeedId,
-    groupId: selectedGroupId,
+    feedId: effectiveFeedId,
+    groupId: effectiveGroupId,
   });
 
   const articles = isStarredMode ? starredArticles : items;
@@ -114,7 +128,9 @@ export function ArticleList() {
 
   // Determine title
   let title = t("article.list.all");
-  if (selectedFeedId) {
+  if (isStandalone) {
+    title = t("feed.standaloneArticles");
+  } else if (selectedFeedId) {
     const feed = getFeedById(selectedFeedId);
     title = feed?.name ?? t("article.feedFallback");
   } else if (selectedGroupId) {
@@ -123,7 +139,7 @@ export function ArticleList() {
   }
 
   const unreadCount = displayArticles.filter((a) => a.unread).length;
-  const hasNoFeeds = !isFeedsLoading && feeds.length === 0;
+  const hasNoFeeds = !isStandalone && !isFeedsLoading && feeds.length === 0;
 
   const handleToggleRead = useCallback(
     async (article: Item) => {
@@ -237,6 +253,34 @@ export function ArticleList() {
     }
   };
 
+  const handleFilterChange = useCallback(
+    (filter: ArticleFilter) => {
+      if (isStandalone) {
+        navigate({
+          to: "/standalone/$filter",
+          params: { filter },
+          search: { article: undefined },
+          replace: true,
+        });
+        return;
+      }
+      setArticleFilter(filter);
+    },
+    [isStandalone, navigate, setArticleFilter],
+  );
+
+  const handleRemoveArticle = useCallback(
+    async (id: number) => {
+      try {
+        await deleteItem.mutateAsync(id);
+        toast.success(t("standalone.toast.removed"));
+      } catch {
+        toast.error(t("standalone.toast.removeFailed"));
+      }
+    },
+    [deleteItem, t],
+  );
+
   return (
     <div className="flex h-full flex-col">
       <ContentHeader>
@@ -259,19 +303,32 @@ export function ArticleList() {
       {/* Article area with filter tabs */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 py-4 sm:px-6">
         {/* Filter tabs - hidden when no articles exist */}
-        {!hasNoFeeds && (articles.length > 0 || articleFilter !== "all") && (
-          <Tabs
-            value={articleFilter}
-            onValueChange={(v) => setArticleFilter(v as ArticleFilter)}
-          >
-            <TabsList>
-              <TabsTrigger value="all">{t("article.filter.all")}</TabsTrigger>
-              <TabsTrigger value="unread">{t("article.filter.unread")}</TabsTrigger>
-              <TabsTrigger value="starred">
-                {t("article.filter.starred")}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {!hasNoFeeds && (articles.length > 0 || articleFilter !== "all" || isStandalone) && (
+          <div className="flex items-center gap-2">
+            <Tabs
+              value={articleFilter}
+              onValueChange={(v) => handleFilterChange(v as ArticleFilter)}
+            >
+              <TabsList>
+                <TabsTrigger value="all">{t("article.filter.all")}</TabsTrigger>
+                <TabsTrigger value="unread">{t("article.filter.unread")}</TabsTrigger>
+                <TabsTrigger value="starred">
+                  {t("article.filter.starred")}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {isStandalone && (
+              <div className="ml-auto">
+                <Button
+                  size="sm"
+                  onClick={() => setAddStandaloneOpen(true)}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  {t("standalone.addArticle")}
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Article list */}
@@ -287,7 +344,13 @@ export function ArticleList() {
                 ))}
               </div>
             ) : articles.length === 0 ? (
-              hasNoFeeds ? (
+              isStandalone ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {t("standalone.empty")}
+                  </p>
+                </div>
+              ) : hasNoFeeds ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                   <p className="text-sm text-muted-foreground">
                     {t("article.list.noFeeds")}
@@ -310,8 +373,14 @@ export function ArticleList() {
             ) : (
               <>
                 {displayArticles.map((article) => {
-                  const feed = getFeedById(article.feed_id);
+                  const feed = isStandalone ? null : getFeedById(article.feed_id);
                   const bookmark = getBookmarkByItemId(article.id);
+                  const feedName = isStandalone
+                    ? (() => {
+                        try { return new URL(article.link).hostname; }
+                        catch { return article.link; }
+                      })()
+                    : (feed?.name ?? bookmark?.feed_name ?? t("common.unknown"));
 
                   return (
                     <ArticleItem
@@ -323,10 +392,11 @@ export function ArticleList() {
                       onToggleStar={handleToggleStar}
                       canToggleRead={article.id > 0}
                       isStarred={isItemStarred(article.id)}
-                      feedName={feed?.name ?? bookmark?.feed_name ?? t("common.unknown")}
+                      feedName={feedName}
                       feedFaviconUrl={
                         feed ? getFaviconUrl(feed.link, feed.site_url) : null
                       }
+                      onRemove={isStandalone ? handleRemoveArticle : undefined}
                     />
                   );
                 })}
