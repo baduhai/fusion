@@ -94,6 +94,8 @@ export const itemAPI = {
     if (params?.limit) query.set("limit", params.limit.toString());
     if (params?.offset) query.set("offset", params.offset.toString());
     if (params?.order_by) query.set("order_by", params.order_by);
+    if (params?.in_inbox !== undefined)
+      query.set("in_inbox", params.in_inbox.toString());
 
     const queryString = query.toString();
     return api.get<ListAPIResponse<Item>>(
@@ -108,6 +110,12 @@ export const itemAPI = {
 
   markUnread: (data: MarkItemsReadRequest) =>
     api.patch<void>("/items/-/unread", data),
+
+  archive: (data: MarkItemsReadRequest) =>
+    api.post<void>("/items/-/archive", data),
+
+  unarchive: (data: MarkItemsReadRequest) =>
+    api.post<void>("/items/-/unarchive", data),
 
   fetchContent: (id: number) =>
     api.post<APIResponse<Item>>(`/items/${id}/fetch-content`),

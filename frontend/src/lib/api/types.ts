@@ -48,6 +48,7 @@ export interface Item {
   full_content: string;
   pub_date: number;
   unread: boolean;
+  archived: boolean;
   created_at: number;
 }
 
@@ -141,6 +142,7 @@ export interface ListItemsParams {
   limit?: number;
   offset?: number;
   order_by?: string;
+  in_inbox?: boolean;
 }
 
 export interface ImportOpmlResponse {

@@ -86,6 +86,7 @@ export function useStarredItems(filters: {
         full_content: "",
         pub_date: bookmark.pub_date,
         unread: false,
+        archived: false,
         created_at: bookmark.created_at,
       }),
     );
