@@ -74,7 +74,7 @@ export function ArticleItem({
     }
   };
 
-  const { offsetX, state, containerRef, onTouchStart, onTouchMove, onTouchEnd } =
+  const { offsetX, state, containerRef, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } =
     useSwipe({
       onSwipeLeft: swipeActions?.right ? handleSwipeLeft : undefined,
       onSwipeRight: swipeActions?.left ? handleSwipeRight : undefined,
@@ -127,39 +127,22 @@ export function ArticleItem({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
     >
-      {/* Background layer - right action (revealed on swipe left) */}
-      {swipeActions?.right && (
-        <div
-          className={cn(
-            "absolute right-0 top-0 flex h-full items-center justify-end px-5 transition-opacity",
-            swipeActions.right.background,
-            offsetX < -30 ? "opacity-100" : "opacity-0",
-          )}
-        >
+      {/* Background layer — fills full container, direction determines which side */}
+      {swipeActions?.left && offsetX > 0 && (
+        <div className={cn("absolute inset-0 flex items-center px-5", swipeActions.left.background)}>
           <div className="flex flex-col items-center gap-1">
-            {swipeActions.right.icon}
-            <span className="text-[10px] text-white">
-              {swipeActions.right.label}
-            </span>
+            {swipeActions.left.icon}
+            <span className="text-[10px] text-white">{swipeActions.left.label}</span>
           </div>
         </div>
       )}
-
-      {/* Background layer - left action (revealed on swipe right) */}
-      {swipeActions?.left && (
-        <div
-          className={cn(
-            "absolute left-0 top-0 flex h-full items-center px-5 transition-opacity",
-            swipeActions.left.background,
-            offsetX > 30 ? "opacity-100" : "opacity-0",
-          )}
-        >
+      {swipeActions?.right && offsetX < 0 && (
+        <div className={cn("absolute inset-0 flex items-center justify-end px-5", swipeActions.right.background)}>
           <div className="flex flex-col items-center gap-1">
-            {swipeActions.left.icon}
-            <span className="text-[10px] text-white">
-              {swipeActions.left.label}
-            </span>
+            {swipeActions.right.icon}
+            <span className="text-[10px] text-white">{swipeActions.right.label}</span>
           </div>
         </div>
       )}

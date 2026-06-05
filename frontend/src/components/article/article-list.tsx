@@ -67,7 +67,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     feedId: effectiveFeedId,
     groupId: effectiveGroupId,
     unread: articleFilter === "unread" ? true : undefined,
-    inbox: articleFilter === "inbox" ? true : undefined,
+    inbox: articleFilter === "inbox" && !isStandalone ? true : undefined,
   });
 
   const { data: groups = [] } = useGroups();
