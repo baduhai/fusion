@@ -15,17 +15,18 @@ import (
 // OrderBy accepts "pub_date" (default) or "created_at".
 // Limit/Offset = 0 means no limit/offset.
 type ListItemsParams struct {
-	FeedID  *int64
-	GroupID *int64
-	Unread  *bool
-	Limit   int
-	Offset  int
-	OrderBy string // "pub_date" or "created_at"
+	FeedID   *int64
+	GroupID  *int64
+	Unread   *bool
+	Archived *bool
+	Limit    int
+	Offset   int
+	OrderBy  string // "pub_date" or "created_at"
 }
 
 func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 	query := `
-		SELECT items.id, items.feed_id, items.guid, items.title, items.link, items.content, items.full_content, items.pub_date, items.unread, items.created_at
+		SELECT items.id, items.feed_id, items.guid, items.title, items.link, items.content, items.full_content, items.pub_date, items.unread, items.archived, items.created_at
 		FROM items
 	`
 	args := []any{}
@@ -48,6 +49,10 @@ func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 	if params.Unread != nil {
 		query += ` AND items.unread = :unread`
 		args = append(args, sql.Named("unread", boolToInt(*params.Unread)))
+	}
+	if params.Archived != nil {
+		query += ` AND items.archived = :archived`
+		args = append(args, sql.Named("archived", boolToInt(*params.Archived)))
 	}
 
 	// ORDER BY cannot use named parameters, validated via allowlist instead
@@ -76,10 +81,12 @@ func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 	for rows.Next() {
 		i := &model.Item{}
 		var unread int
-		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt); err != nil {
+		var archived int
+		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &archived, &i.CreatedAt); err != nil {
 			return nil, err
 		}
 		i.Unread = intToBool(unread)
+		i.Archived = intToBool(archived)
 		items = append(items, i)
 	}
 	return items, rows.Err()
@@ -88,11 +95,12 @@ func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 func (s *Store) GetItem(id int64) (*model.Item, error) {
 	i := &model.Item{}
 	var unread int
+	var archived int
 	err := s.db.QueryRow(`
-		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, created_at
+		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, archived, created_at
 		FROM items
 		WHERE id = :id
-	`, sql.Named("id", id)).Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt)
+	`, sql.Named("id", id)).Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &archived, &i.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("%w: item", ErrNotFound)
@@ -101,6 +109,7 @@ func (s *Store) GetItem(id int64) (*model.Item, error) {
 	}
 
 	i.Unread = intToBool(unread)
+	i.Archived = intToBool(archived)
 	return i, nil
 }
 
@@ -195,8 +204,9 @@ func (s *Store) UpdateItemFullContent(feedID int64, guid, fullContent string) er
 }
 
 func (s *Store) UpdateItemUnread(id int64, unread bool) error {
-	result, err := s.db.Exec(`UPDATE items SET unread = :unread WHERE id = :id`,
-		sql.Named("unread", boolToInt(unread)), sql.Named("id", id))
+	archived := boolToInt(!unread) // reading archives, unreading unarchives
+	result, err := s.db.Exec(`UPDATE items SET unread = :unread, archived = :archived WHERE id = :id`,
+		sql.Named("unread", boolToInt(unread)), sql.Named("archived", archived), sql.Named("id", id))
 	if err != nil {
 		return err
 	}
@@ -234,18 +244,72 @@ func (s *Store) batchUpdateItemsUnreadChunk(ids []int64, unread bool) error {
 		return nil
 	}
 
+	archived := boolToInt(!unread) // reading archives, unreading unarchives
 	placeholders := make([]string, len(ids))
-	args := make([]any, 0, len(ids)+1)
+	args := make([]any, 0, len(ids)+2)
 	args = append(args, sql.Named("unread", boolToInt(unread)))
+	args = append(args, sql.Named("archived", archived))
 	for i, id := range ids {
 		paramName := fmt.Sprintf("id%d", i)
 		placeholders[i] = ":" + paramName
 		args = append(args, sql.Named(paramName, id))
 	}
 
-	query := fmt.Sprintf(`UPDATE items SET unread = :unread WHERE id IN (%s)`, strings.Join(placeholders, ","))
+	query := fmt.Sprintf(`UPDATE items SET unread = :unread, archived = :archived WHERE id IN (%s)`, strings.Join(placeholders, ","))
 	_, err := s.db.Exec(query, args...)
 	return err
+}
+
+func (s *Store) ArchiveItems(ids []int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	const chunkSize = 500
+	for start := 0; start < len(ids); start += chunkSize {
+		end := min(start+chunkSize, len(ids))
+
+		placeholders := make([]string, end-start)
+		args := make([]any, end-start)
+		for i, id := range ids[start:end] {
+			paramName := fmt.Sprintf("id%d", i)
+			placeholders[i] = ":" + paramName
+			args[i] = sql.Named(paramName, id)
+		}
+
+		query := fmt.Sprintf(`UPDATE items SET archived = 1 WHERE id IN (%s)`, strings.Join(placeholders, ","))
+		if _, err := s.db.Exec(query, args...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Store) UnarchiveItems(ids []int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	const chunkSize = 500
+	for start := 0; start < len(ids); start += chunkSize {
+		end := min(start+chunkSize, len(ids))
+
+		placeholders := make([]string, end-start)
+		args := make([]any, end-start)
+		for i, id := range ids[start:end] {
+			paramName := fmt.Sprintf("id%d", i)
+			placeholders[i] = ":" + paramName
+			args[i] = sql.Named(paramName, id)
+		}
+
+		query := fmt.Sprintf(`UPDATE items SET archived = 0 WHERE id IN (%s)`, strings.Join(placeholders, ","))
+		if _, err := s.db.Exec(query, args...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *Store) DeleteItem(id int64) error {
@@ -267,17 +331,17 @@ func (s *Store) DeleteItem(id int64) error {
 // If feedID is non-nil, only marks items from that specific feed.
 func (s *Store) MarkAllAsRead(feedID *int64) error {
 	if feedID != nil {
-		_, err := s.db.Exec(`UPDATE items SET unread = 0 WHERE feed_id = :feed_id`, sql.Named("feed_id", *feedID))
+		_, err := s.db.Exec(`UPDATE items SET unread = 0, archived = 1 WHERE feed_id = :feed_id`, sql.Named("feed_id", *feedID))
 		return err
 	}
-	_, err := s.db.Exec(`UPDATE items SET unread = 0`)
+	_, err := s.db.Exec(`UPDATE items SET unread = 0, archived = 1`)
 	return err
 }
 
 func (s *Store) MarkGroupAsRead(groupID int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
-		SET unread = 0
+		SET unread = 0, archived = 1
 		WHERE feed_id IN (
 			SELECT id
 			FROM feeds
@@ -290,7 +354,7 @@ func (s *Store) MarkGroupAsRead(groupID int64) error {
 func (s *Store) MarkFeedAsReadBefore(feedID, before int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
-		SET unread = 0
+		SET unread = 0, archived = 1
 		WHERE feed_id = :feed_id
 		  AND (CASE WHEN pub_date > 0 THEN pub_date ELSE created_at END) <= :before
 	`, sql.Named("feed_id", feedID), sql.Named("before", before))
@@ -300,7 +364,7 @@ func (s *Store) MarkFeedAsReadBefore(feedID, before int64) error {
 func (s *Store) MarkGroupAsReadBefore(groupID, before int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
-		SET unread = 0
+		SET unread = 0, archived = 1
 		WHERE feed_id IN (
 			SELECT id
 			FROM feeds
@@ -314,7 +378,7 @@ func (s *Store) MarkGroupAsReadBefore(groupID, before int64) error {
 func (s *Store) MarkAllAsReadBefore(before int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
-		SET unread = 0
+		SET unread = 0, archived = 1
 		WHERE (CASE WHEN pub_date > 0 THEN pub_date ELSE created_at END) <= :before
 	`, sql.Named("before", before))
 	return err
@@ -354,7 +418,7 @@ type ListFeverItemsParams struct {
 
 func (s *Store) ListFeverItems(params ListFeverItemsParams) ([]*model.Item, error) {
 	query := `
-		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, created_at
+		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, archived, created_at
 		FROM items
 		WHERE 1=1
 	`
@@ -401,10 +465,12 @@ func (s *Store) ListFeverItems(params ListFeverItemsParams) ([]*model.Item, erro
 	for rows.Next() {
 		i := &model.Item{}
 		var unread int
-		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt); err != nil {
+		var archived int
+		if err := rows.Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &archived, &i.CreatedAt); err != nil {
 			return nil, err
 		}
 		i.Unread = intToBool(unread)
+		i.Archived = intToBool(archived)
 		items = append(items, i)
 	}
 
@@ -421,11 +487,12 @@ func (s *Store) ItemExists(feedID int64, guid string) (bool, error) {
 func (s *Store) GetItemByFeedAndGUID(feedID int64, guid string) (*model.Item, error) {
 	i := &model.Item{}
 	var unread int
+	var archived int
 	err := s.db.QueryRow(`
-		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, created_at
+		SELECT id, feed_id, guid, title, link, content, full_content, pub_date, unread, archived, created_at
 		FROM items
 		WHERE feed_id = :feed_id AND guid = :guid
-	`, sql.Named("feed_id", feedID), sql.Named("guid", guid)).Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &i.CreatedAt)
+	`, sql.Named("feed_id", feedID), sql.Named("guid", guid)).Scan(&i.ID, &i.FeedID, &i.GUID, &i.Title, &i.Link, &i.Content, &i.FullContent, &i.PubDate, &unread, &archived, &i.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("%w: item", ErrNotFound)
@@ -434,6 +501,7 @@ func (s *Store) GetItemByFeedAndGUID(feedID int64, guid string) (*model.Item, er
 	}
 
 	i.Unread = intToBool(unread)
+	i.Archived = intToBool(archived)
 	return i, nil
 }
 
@@ -539,6 +607,10 @@ func (s *Store) CountItems(params ListItemsParams) (int, error) {
 	if params.Unread != nil {
 		query += ` AND items.unread = :unread`
 		args = append(args, sql.Named("unread", boolToInt(*params.Unread)))
+	}
+	if params.Archived != nil {
+		query += ` AND items.archived = :archived`
+		args = append(args, sql.Named("archived", boolToInt(*params.Archived)))
 	}
 
 	var count int
