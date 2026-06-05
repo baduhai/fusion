@@ -16,7 +16,7 @@ export function FeedList() {
   const { t } = useI18n();
   const { data: groups = [], isLoading } = useGroups();
   const { feeds } = useFeedLookup();
-  const { getTotalUnreadCount } = useUnreadCounts();
+  const { getTotalUnreadCount, getTotalInboxCount } = useUnreadCounts();
   const {
     selectedFeedId,
     selectedGroupId,
@@ -31,6 +31,7 @@ export function FeedList() {
   const isTopLevelSelected =
     isOnHomePage && selectedFeedId === null && selectedGroupId === null;
   const totalUnread = getTotalUnreadCount();
+  const totalInbox = getTotalInboxCount();
 
   const standaloneFeed = useMemo(
     () => feeds.find((f) => f.link === standaloneFeedLink),
@@ -55,7 +56,7 @@ export function FeedList() {
     {
       value: "inbox",
       label: t("article.filter.inbox"),
-      count: totalUnread,
+      count: totalInbox,
       icon: Inbox,
     },
     {

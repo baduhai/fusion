@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCheck, Loader2, Plus } from "lucide-react";
+import { Archive, CheckCheck, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -269,6 +269,16 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     }
   };
 
+  const handleArchiveAll = async () => {
+    const ids = displayArticles.filter((a) => a.id > 0).map((a) => a.id);
+    if (ids.length === 0) return;
+    try {
+      await archiveItems.mutateAsync(ids);
+    } catch (error) {
+      console.error("Failed to archive all:", error);
+    }
+  };
+
   const handleFilterChange = useCallback(
     (filter: ArticleFilter) => {
       if (isStandalone) {
@@ -304,16 +314,30 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
           <SidebarTrigger />
           <h2 className="truncate text-lg font-semibold">{title}</h2>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleMarkAllAsRead}
-          disabled={unreadCount === 0}
-          className="gap-1.5 text-xs"
-        >
-          <CheckCheck className="h-4 w-4" />
-          {t("article.list.markAllRead")}
-        </Button>
+        <div className="flex items-center gap-2">
+          {articleFilter === "inbox" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleArchiveAll}
+              disabled={displayArticles.length === 0}
+              className="gap-1.5 text-xs"
+            >
+              <Archive className="h-4 w-4" />
+              {t("article.list.archiveAll")}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0}
+            className="gap-1.5 text-xs"
+          >
+            <CheckCheck className="h-4 w-4" />
+            {t("article.list.markAllRead")}
+          </Button>
+        </div>
       </ContentHeader>
 
       {/* Article area with filter tabs */}

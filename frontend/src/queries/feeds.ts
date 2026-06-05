@@ -62,7 +62,12 @@ export function useUnreadCounts() {
     [feeds],
   );
 
-  return { getUnreadCount, getGroupUnreadCount, getTotalUnreadCount };
+  const getTotalInboxCount = useCallback(
+    () => feeds.reduce((sum, f) => sum + (f.inbox_count ?? 0), 0),
+    [feeds],
+  );
+
+  return { getUnreadCount, getGroupUnreadCount, getTotalUnreadCount, getTotalInboxCount };
 }
 
 export function useCreateFeed() {

@@ -25,6 +25,7 @@ type Feed struct {
 	FetchState FeedFetchState `json:"fetch_state"`
 
 	UnreadCount int64 `json:"unread_count"`
+	InboxCount  int64 `json:"inbox_count"`
 	ItemCount   int64 `json:"item_count"`
 }
 

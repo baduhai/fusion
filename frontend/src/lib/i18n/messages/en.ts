@@ -208,6 +208,7 @@ export const enMessages = {
   "article.list.inbox": "Inbox",
   "article.list.loadMore": "Load more",
   "article.list.loading": "Loading...",
+  "article.list.archiveAll": "Archive all",
   "article.list.markAllRead": "Mark all as read",
   "article.list.noArticles": "No articles found",
   "article.list.noFeeds": "No feeds yet. Go to Feed Management to add your first feed.",

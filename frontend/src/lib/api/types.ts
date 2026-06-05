@@ -20,6 +20,7 @@ export interface Feed {
   updated_at: number;
   fetch_state: FeedFetchState;
   unread_count: number;
+  inbox_count: number;
   item_count: number;
 }
 

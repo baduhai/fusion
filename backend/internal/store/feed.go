@@ -19,6 +19,7 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
 		       COALESCE(fs.last_error_at, 0), COALESCE(fs.last_error, ''), COALESCE(fs.consecutive_failures, 0),
 		       COALESCE(SUM(CASE WHEN i.unread = 1 THEN 1 ELSE 0 END), 0) AS unread_count,
+		       COALESCE(SUM(CASE WHEN i.unread = 1 AND i.archived = 0 THEN 1 ELSE 0 END), 0) AS inbox_count,
 		       COALESCE(COUNT(i.id), 0) AS item_count
 		FROM feeds f
 		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
@@ -66,6 +67,7 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 			&f.FetchState.LastError,
 			&f.FetchState.ConsecutiveFailures,
 			&f.UnreadCount,
+			&f.InboxCount,
 			&f.ItemCount,
 		); err != nil {
 			return nil, err
@@ -89,6 +91,7 @@ func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
 		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
 		       COALESCE(fs.last_error_at, 0), COALESCE(fs.last_error, ''), COALESCE(fs.consecutive_failures, 0),
 		       COALESCE(SUM(CASE WHEN i.unread = 1 THEN 1 ELSE 0 END), 0) AS unread_count,
+		       COALESCE(SUM(CASE WHEN i.unread = 1 AND i.archived = 0 THEN 1 ELSE 0 END), 0) AS inbox_count,
 		       COALESCE(COUNT(i.id), 0) AS item_count
 		FROM feeds f
 		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
@@ -137,6 +140,7 @@ func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
 			&f.FetchState.LastError,
 			&f.FetchState.ConsecutiveFailures,
 			&f.UnreadCount,
+			&f.InboxCount,
 			&f.ItemCount,
 		); err != nil {
 			return nil, err
