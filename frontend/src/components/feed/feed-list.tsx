@@ -40,7 +40,7 @@ export function FeedList() {
     [feeds],
   );
   const standaloneUnreadCount = standaloneFeed?.unread_count ?? 0;
-  const isStandalonePage = pathname === "/standalone";
+  const isStandalonePage = pathname.startsWith("/standalone");
 
   const regularFeeds = useMemo(
     () => feeds.filter((f) => f.link !== standaloneFeedLink),

@@ -124,17 +124,23 @@ export function useUrlState() {
   const setSelectedArticle = useCallback(
     (articleId: number | null) => {
       if (articleId === null) {
-        if (pathname === "/standalone") {
-          navigate({ to: "/standalone", search: {}, replace: true });
+        if (pathname.startsWith("/standalone")) {
+          navigate({
+            to: "/standalone/$filter",
+            params: { filter: articleFilter },
+            search: {},
+            replace: true,
+          });
           return;
         }
         navigateToList({ articleId: null, replace: true });
         return;
       }
 
-      if (pathname === "/standalone") {
+      if (pathname.startsWith("/standalone")) {
         navigate({
-          to: "/standalone",
+          to: "/standalone/$filter",
+          params: { filter: articleFilter },
           search: { article: articleId },
           replace: selectedArticleId !== null,
         });

@@ -1,11 +1,13 @@
 import { BookOpen, ExternalLink, Trash2, Plus, Star, Circle, CircleCheck } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/app-layout";
 import { ContentHeader } from "@/components/layout/content-header";
 import { SidebarTrigger } from "@/components/layout/sidebar-trigger";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18n } from "@/lib/i18n";
 import { cn, formatDate, extractSummary } from "@/lib/utils";
 import { toSafeExternalUrl } from "@/lib/safe-url";
@@ -18,12 +20,24 @@ import {
   useDeleteBookmark,
 } from "@/queries/bookmarks";
 import { useUIStore } from "@/store";
+import {
+  defaultArticleFilter,
+  isArticleFilter,
+  type ArticleFilter,
+} from "@/lib/article-filter";
 import type { Item } from "@/lib/api";
 
 const standaloneFeedLink = "fusion://standalone";
 
 export function StandaloneArticlesPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const params = useParams({ strict: false }) as { filter?: string };
+  const articleFilter: ArticleFilter =
+    typeof params.filter === "string" && isArticleFilter(params.filter)
+      ? params.filter
+      : defaultArticleFilter;
+
   const { feeds } = useFeedLookup();
   const standaloneFeed = useMemo(
     () => feeds.find((f) => f.link === standaloneFeedLink),
@@ -41,6 +55,16 @@ export function StandaloneArticlesPage() {
   const markItemsUnread = useMarkItemsUnread();
   const { selectedArticleId, setSelectedArticle } = useUrlState();
   const { isItemStarred, getBookmarkByItemId } = useBookmarkLookup();
+
+  const filteredArticles = useMemo(() => {
+    if (articleFilter === "unread") {
+      return articles.filter((a) => a.unread);
+    }
+    if (articleFilter === "starred") {
+      return articles.filter((a) => isItemStarred(a.id));
+    }
+    return articles;
+  }, [articles, articleFilter, isItemStarred]);
   const createBookmark = useCreateBookmark();
   const deleteBookmark = useDeleteBookmark();
   const { setAddStandaloneOpen } = useUIStore();
@@ -92,7 +116,19 @@ export function StandaloneArticlesPage() {
     }
   };
 
-  const unreadCount = articles.filter((a) => a.unread).length;
+  const handleSetArticleFilter = useCallback(
+    (filter: ArticleFilter) => {
+      navigate({
+        to: "/standalone/$filter",
+        params: { filter },
+        search: {},
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  const unreadCount = filteredArticles.filter((a) => a.unread).length;
 
   return (
     <AppLayout>
@@ -113,13 +149,27 @@ export function StandaloneArticlesPage() {
         </ContentHeader>
 
         <div className="flex items-center gap-2 px-4 py-3 sm:px-6">
-          <Button
-            size="sm"
-            onClick={() => setAddStandaloneOpen(true)}
+          <Tabs
+            value={articleFilter}
+            onValueChange={(v) => handleSetArticleFilter(v as ArticleFilter)}
           >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            {t("standalone.addArticle")}
-          </Button>
+            <TabsList>
+              <TabsTrigger value="all">{t("article.filter.all")}</TabsTrigger>
+              <TabsTrigger value="unread">{t("article.filter.unread")}</TabsTrigger>
+              <TabsTrigger value="starred">
+                {t("article.filter.starred")}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              onClick={() => setAddStandaloneOpen(true)}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              {t("standalone.addArticle")}
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="min-h-0 flex-1">
@@ -133,13 +183,13 @@ export function StandaloneArticlesPage() {
                   />
                 ))}
               </div>
-            ) : articles.length === 0 ? (
+            ) : filteredArticles.length === 0 ? (
               <div className="py-12 text-center text-sm text-muted-foreground">
                 {t("standalone.empty")}
               </div>
             ) : (
               <div>
-                {articles.map((article) => {
+                {filteredArticles.map((article) => {
                   const isSelected = selectedArticleId === article.id;
                   const starred = isItemStarred(article.id);
                   const safeLink = toSafeExternalUrl(article.link);
