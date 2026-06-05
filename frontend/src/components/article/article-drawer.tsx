@@ -241,7 +241,7 @@ export function ArticleDrawer() {
           <div className="flex h-full flex-col">
             {/* Header */}
             <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto min-w-0 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <Button
                   variant="outline"
                   size="sm"
