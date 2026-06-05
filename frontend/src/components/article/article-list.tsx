@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Archive, CheckCheck, Loader2, Plus } from "lucide-react";
+import { Archive, CheckCheck, Circle, CircleCheck, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArticleItem } from "./article-item";
+import { ArticleItem, type SwipeAction } from "./article-item";
 import { ContentHeader } from "@/components/layout/content-header";
 import { SidebarTrigger } from "@/components/layout/sidebar-trigger";
 import { useArticleNavigation } from "@/hooks/use-keyboard";
@@ -422,6 +422,39 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
                       })()
                     : (feed?.name ?? bookmark?.feed_name ?? t("common.unknown"));
 
+                  const toggleReadAction: SwipeAction = {
+                    icon: article.unread ? (
+                      <CircleCheck className="h-5 w-5 text-white" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-white" />
+                    ),
+                    background: article.unread ? "bg-primary" : "bg-muted-foreground",
+                    label: article.unread
+                      ? t("article.action.markRead")
+                      : t("article.action.markUnread"),
+                  };
+
+                  const swipeActions: { left?: SwipeAction; right?: SwipeAction } = (() => {
+                    const right = toggleReadAction;
+                    let left: SwipeAction | undefined;
+
+                    if (articleFilter === "inbox" && !isStandalone) {
+                      left = {
+                        icon: <Archive className="h-5 w-5 text-white" />,
+                        background: "bg-slate-500",
+                        label: t("article.action.archive"),
+                      };
+                    } else if (isStandalone) {
+                      left = {
+                        icon: <Trash2 className="h-5 w-5 text-white" />,
+                        background: "bg-destructive",
+                        label: t("article.action.remove"),
+                      };
+                    }
+
+                    return { right, left };
+                  })();
+
                   return (
                     <ArticleItem
                       key={article.id}
@@ -438,6 +471,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
                       }
                       onRemove={isStandalone ? handleRemoveArticle : undefined}
                       onArchive={articleFilter === "inbox" && !isStandalone ? handleArchive : undefined}
+                      swipeActions={swipeActions}
                     />
                   );
                 })}
