@@ -1,4 +1,4 @@
-import { Circle, CircleCheck, Star, ExternalLink, Trash2 } from "lucide-react";
+import { Archive, Circle, CircleCheck, Star, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { cn, formatDate, extractSummary, estimateReadingTimeMinutes } from "@/lib/utils";
@@ -17,6 +17,7 @@ interface ArticleItemProps {
   feedName: string;
   feedFaviconUrl: string | null;
   onRemove?: (id: number) => Promise<void>;
+  onArchive?: (id: number) => Promise<void>;
 }
 
 export function ArticleItem({
@@ -30,6 +31,7 @@ export function ArticleItem({
   feedName,
   feedFaviconUrl,
   onRemove,
+  onArchive,
 }: ArticleItemProps) {
   const { t } = useI18n();
 
@@ -71,6 +73,16 @@ export function ArticleItem({
       await onRemove(article.id);
     } catch (error) {
       console.error("Failed to remove article:", error);
+    }
+  };
+
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onArchive) return;
+    try {
+      await onArchive(article.id);
+    } catch (error) {
+      console.error("Failed to archive article:", error);
     }
   };
 
@@ -162,6 +174,18 @@ export function ArticleItem({
             )}
           />
         </Button>
+        {onArchive && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleArchive}
+            className="bg-muted"
+            aria-label={t("article.action.archive")}
+            title={t("article.action.archive")}
+          >
+            <Archive className="text-muted-foreground" />
+          </Button>
+        )}
         {onRemove && (
           <Button
             variant="ghost"
