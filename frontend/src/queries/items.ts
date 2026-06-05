@@ -117,7 +117,7 @@ function applyOptimisticItemReadState(
         pages: old.pages.map((page) => ({
           ...page,
           data: page.data.map((item) => {
-            if (!idSet.has(item.id) || item.unread === targetUnread) {
+            if (!idSet.has(item.id) || (item.unread === targetUnread && item.archived === !targetUnread)) {
               return item;
             }
 
@@ -140,7 +140,7 @@ function applyOptimisticItemReadState(
     const optimisticItem = updatedItemsById.get(id);
     qc.setQueryData<Item>(queryKeys.items.detail(id), (old) =>
       old
-        ? old.unread !== targetUnread
+        ?         old.unread !== targetUnread || old.archived !== !targetUnread
           ? { ...old, unread: targetUnread, archived: !targetUnread }
           : old
         : optimisticItem,
