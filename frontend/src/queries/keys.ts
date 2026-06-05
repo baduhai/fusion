@@ -2,12 +2,14 @@ export interface ItemFilters {
   feedId?: number | null;
   groupId?: number | null;
   unread?: boolean;
+  inbox?: boolean;
 }
 
 export interface NormalizedItemFilters {
   feedId: number | null;
   groupId: number | null;
   unread: boolean;
+  inbox: boolean;
 }
 
 export function normalizeItemFilters(
@@ -17,6 +19,7 @@ export function normalizeItemFilters(
     feedId: filters.feedId ?? null,
     groupId: filters.groupId ?? null,
     unread: filters.unread ?? false,
+    inbox: filters.inbox ?? false,
   };
 }
 

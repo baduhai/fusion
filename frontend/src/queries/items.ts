@@ -39,6 +39,7 @@ function buildListItemsParams(
   if (filters.feedId) params.feed_id = filters.feedId;
   if (filters.groupId) params.group_id = filters.groupId;
   if (filters.unread) params.unread = true;
+  if (filters.inbox) params.in_inbox = true;
 
   return params;
 }
@@ -218,6 +219,43 @@ export function useMarkItemsRead() {
 
 export function useMarkItemsUnread() {
   return useSetItemsReadState(true);
+}
+
+export function useArchiveItems() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      await itemAPI.archive({ ids });
+      return ids;
+    },
+    onMutate: async (ids) => {
+      await Promise.all([
+        qc.cancelQueries({ queryKey: queryKeys.items.all }),
+      ]);
+      return snapshotItemsMutationState(qc, ids);
+    },
+    onError: (_error, _ids, context) => {
+      rollbackItemsMutation(qc, context);
+    },
+    onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: queryKeys.items.all });
+    },
+  });
+}
+
+export function useUnarchiveItems() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      await itemAPI.unarchive({ ids });
+      return ids;
+    },
+    onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: queryKeys.items.all });
+    },
+  });
 }
 
 export function useFetchItemContent() {
