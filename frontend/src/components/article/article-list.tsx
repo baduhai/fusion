@@ -15,6 +15,7 @@ import {
   useItems,
   useMarkItemsRead,
   useMarkItemsUnread,
+  useArchiveItems,
   useDeleteItem,
 } from "@/queries/items";
 import { useFeedLookup } from "@/queries/feeds";
@@ -66,12 +67,14 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     feedId: effectiveFeedId,
     groupId: effectiveGroupId,
     unread: articleFilter === "unread" ? true : undefined,
+    inbox: articleFilter === "inbox" ? true : undefined,
   });
 
   const { data: groups = [] } = useGroups();
   const { feeds, getFeedById, isLoading: isFeedsLoading } = useFeedLookup();
   const markItemsRead = useMarkItemsRead();
   const markItemsUnread = useMarkItemsUnread();
+  const archiveItems = useArchiveItems();
   const { isItemStarred, getBookmarkByItemId } = useBookmarkLookup();
   const createBookmark = useCreateBookmark();
   const deleteBookmark = useDeleteBookmark();
@@ -136,6 +139,8 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   } else if (selectedGroupId) {
     const group = groups.find((g) => g.id === selectedGroupId);
     title = group?.name ?? t("article.groupFallback");
+  } else if (articleFilter === "inbox") {
+    title = t("article.list.inbox");
   }
 
   const unreadCount = displayArticles.filter((a) => a.unread).length;
@@ -207,6 +212,17 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
       }
     },
     [createBookmark, deleteBookmark, getBookmarkByItemId, isItemStarred],
+  );
+
+  const handleArchive = useCallback(
+    async (id: number) => {
+      try {
+        await archiveItems.mutateAsync([id]);
+      } catch (error) {
+        console.error("Failed to archive article:", error);
+      }
+    },
+    [archiveItems],
   );
 
   const handleMarkAllAsRead = async () => {
@@ -303,7 +319,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
       {/* Article area with filter tabs */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 py-4 sm:px-6">
         {/* Filter tabs - hidden when no articles exist */}
-        {!hasNoFeeds && (articles.length > 0 || articleFilter !== "all" || isStandalone) && (
+        {!hasNoFeeds && articleFilter !== "inbox" && (articles.length > 0 || articleFilter !== "all" || isStandalone) && (
           <div className="flex items-center gap-2">
             <Tabs
               value={articleFilter}
@@ -397,6 +413,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
                         feed ? getFaviconUrl(feed.link, feed.site_url) : null
                       }
                       onRemove={isStandalone ? handleRemoveArticle : undefined}
+                      onArchive={articleFilter === "inbox" && !isStandalone ? handleArchive : undefined}
                     />
                   );
                 })}
