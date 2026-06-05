@@ -53,6 +53,20 @@ func (h *Handler) listItems(c *gin.Context) {
 		params.Unread = &val
 	}
 
+	if inInbox := c.Query("in_inbox"); inInbox != "" {
+		val, err := strconv.ParseBool(inInbox)
+		if err != nil {
+			badRequestError(c, "invalid in_inbox")
+			return
+		}
+		if val {
+			t := true
+			f := false
+			params.Unread = &t
+			params.Archived = &f
+		}
+	}
+
 	if limit := c.Query("limit"); limit != "" {
 		val, err := strconv.Atoi(limit)
 		if err != nil || val <= 0 {
@@ -149,6 +163,44 @@ func (h *Handler) markItemsUnread(c *gin.Context) {
 
 	if err := h.store.BatchUpdateItemsUnread(req.IDs, true); err != nil {
 		internalError(c, err, "mark items as unread")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) archiveItems(c *gin.Context) {
+	var req markItemsReadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		badRequestError(c, "invalid request")
+		return
+	}
+	if len(req.IDs) == 0 || len(req.IDs) > maxBatchUpdateIDs {
+		badRequestError(c, "invalid ids")
+		return
+	}
+
+	if err := h.store.ArchiveItems(req.IDs); err != nil {
+		internalError(c, err, "archive items")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) unarchiveItems(c *gin.Context) {
+	var req markItemsReadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		badRequestError(c, "invalid request")
+		return
+	}
+	if len(req.IDs) == 0 || len(req.IDs) > maxBatchUpdateIDs {
+		badRequestError(c, "invalid ids")
+		return
+	}
+
+	if err := h.store.UnarchiveItems(req.IDs); err != nil {
+		internalError(c, err, "unarchive items")
 		return
 	}
 

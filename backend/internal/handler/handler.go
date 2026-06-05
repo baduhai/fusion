@@ -138,6 +138,8 @@ func (h *Handler) SetupRouter() *gin.Engine {
 			auth.POST("/items/:id/fetch-content", h.fetchItemContent)
 			auth.PATCH("/items/-/read", h.markItemsRead)
 			auth.PATCH("/items/-/unread", h.markItemsUnread)
+			auth.POST("/items/-/archive", h.archiveItems)
+			auth.POST("/items/-/unarchive", h.unarchiveItems)
 			auth.DELETE("/items/:id", h.deleteItem)
 
 			auth.GET("/search", h.search)
