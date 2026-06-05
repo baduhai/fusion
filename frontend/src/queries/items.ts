@@ -127,7 +127,7 @@ function applyOptimisticItemReadState(
               (feedDeltaMap.get(item.feed_id) ?? 0) + delta,
             );
 
-            const updatedItem = { ...item, unread: targetUnread };
+            const updatedItem = { ...item, unread: targetUnread, archived: !targetUnread };
             updatedItemsById.set(item.id, updatedItem);
             return updatedItem;
           }),
@@ -141,7 +141,7 @@ function applyOptimisticItemReadState(
     qc.setQueryData<Item>(queryKeys.items.detail(id), (old) =>
       old
         ? old.unread !== targetUnread
-          ? { ...old, unread: targetUnread }
+          ? { ...old, unread: targetUnread, archived: !targetUnread }
           : old
         : optimisticItem,
     );
