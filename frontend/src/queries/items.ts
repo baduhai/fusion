@@ -208,6 +208,7 @@ function useSetItemsReadState(targetUnread: boolean) {
       rollbackItemsMutation(qc, context);
     },
     onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: queryKeys.items.all });
       await qc.invalidateQueries({ queryKey: queryKeys.feeds.all });
     },
   });

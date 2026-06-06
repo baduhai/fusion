@@ -51,17 +51,21 @@ export function useUrlState() {
       replace?: boolean;
     } = {}) => {
       const nextFilter = filter ?? articleFilter;
+
       const nextFeedId = feedId === undefined ? selectedFeedId : feedId;
       const nextGroupId = groupId === undefined ? selectedGroupId : groupId;
       const nextArticleId = articleId === undefined ? selectedArticleId : articleId;
       const nextSearch = { article: nextArticleId ?? undefined };
+
+      // inbox is a top-level concept, feed/group pages default to all
+      const feedFilter = nextFilter === "inbox" ? "all" : nextFilter;
 
       if (nextGroupId !== null) {
         navigate({
           to: "/groups/$groupId/$filter",
           params: {
             groupId: String(nextGroupId),
-            filter: nextFilter,
+            filter: feedFilter,
           },
           search: nextSearch,
           replace: replace ?? true,
@@ -74,7 +78,7 @@ export function useUrlState() {
           to: "/feeds/$feedId/$filter",
           params: {
             feedId: String(nextFeedId),
-            filter: nextFilter,
+            filter: feedFilter,
           },
           search: nextSearch,
           replace: replace ?? true,
