@@ -11,6 +11,7 @@ import { EditFeedDialog } from "@/components/feed/edit-feed-dialog";
 import { ImportOpmlDialog } from "@/components/feed/import-opml-dialog";
 import { ShortcutsDialog } from "@/components/layout/shortcuts-dialog";
 import { StandaloneAddDialog } from "@/components/article/standalone-add-dialog";
+import { AddChoiceDialog } from "@/components/layout/add-choice-dialog";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard";
 import { useI18n } from "@/lib/i18n";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -67,6 +68,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <ImportOpmlDialog />
       <ShortcutsDialog />
       <StandaloneAddDialog />
+      <AddChoiceDialog />
     </div>
   );
 }
