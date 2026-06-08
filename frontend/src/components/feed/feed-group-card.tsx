@@ -125,7 +125,7 @@ export function FeedGroupCard({
             />
             <span
               className={cn(
-                "text-sm",
+                "min-w-0 truncate text-sm",
                 isCollapsed ? "font-medium" : "font-semibold",
               )}
             >
