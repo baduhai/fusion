@@ -1,4 +1,4 @@
-import { BookOpen, Search, Settings, Rss } from "lucide-react";
+import { Plus, Search, Settings, Rss } from "lucide-react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
 import { FeedList } from "@/components/feed/feed-list";
 import { useI18n } from "@/lib/i18n";
@@ -7,7 +7,7 @@ import { useUIStore } from "@/store";
 
 export function Sidebar() {
   const { t } = useI18n();
-  const { setSearchOpen, setSettingsOpen, setAddStandaloneOpen } = useUIStore();
+  const { setSearchOpen, setSettingsOpen, setAddChoiceOpen } = useUIStore();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isFeedsPage = pathname === "/feeds";
@@ -48,6 +48,13 @@ export function Sidebar() {
       {/* Footer */}
       <div className="p-2">
         <button
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent/50"
+          onClick={() => setAddChoiceOpen(true)}
+        >
+          <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span>{t("sidebar.add")}</span>
+        </button>
+        <button
           className={cn(
             "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
             isFeedsPage
@@ -58,13 +65,6 @@ export function Sidebar() {
         >
           <Rss className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span>{t("sidebar.manageFeeds")}</span>
-        </button>
-        <button
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent/50"
-          onClick={() => setAddStandaloneOpen(true)}
-        >
-          <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span>{t("sidebar.addStandaloneArticle")}</span>
         </button>
         <button
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent/50"
