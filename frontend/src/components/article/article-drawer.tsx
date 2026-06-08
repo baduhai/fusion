@@ -109,9 +109,15 @@ export function ArticleDrawer() {
   const autoMarkRead = usePreferencesStore((s) => s.autoMarkRead);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const autoMarkedRef = useRef<number | null>(null);
+  const addedToInboxRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!article || !article.unread || article.archived || !autoMarkRead || !canToggleRead) {
+    if (!article || !article.unread || !autoMarkRead || !canToggleRead) {
+      return;
+    }
+
+    if (addedToInboxRef.current === article.id) {
+      addedToInboxRef.current = null;
       return;
     }
 
@@ -265,6 +271,7 @@ export function ArticleDrawer() {
                     size="sm"
                     onClick={async (e) => {
                       e.stopPropagation();
+                      addedToInboxRef.current = article.id;
                       try {
                         await markUnread.mutateAsync([article.id]);
                       } catch (error) {
