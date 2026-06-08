@@ -117,7 +117,6 @@ export function ArticleDrawer() {
     }
 
     if (addedToInboxRef.current === article.id) {
-      addedToInboxRef.current = null;
       return;
     }
 
@@ -151,6 +150,7 @@ export function ArticleDrawer() {
   if (article?.id !== prevArticleIdRef.current) {
     prevArticleIdRef.current = article?.id ?? null;
     autoMarkedRef.current = null;
+    addedToInboxRef.current = null;
   }
 
   const handleOpenChange = (open: boolean) => {
