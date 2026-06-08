@@ -24,7 +24,7 @@ func (h *Handler) listBookmarks(c *gin.Context) {
 
 	if limitStr := c.Query("limit"); limitStr != "" {
 		val, err := strconv.Atoi(limitStr)
-		if err != nil || val <= 0 {
+		if err != nil || val < 0 {
 			badRequestError(c, "invalid limit")
 			return
 		}

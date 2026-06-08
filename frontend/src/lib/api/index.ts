@@ -145,6 +145,8 @@ export const bookmarkAPI = {
 export const standaloneArticleAPI = {
   create: (data: CreateStandaloneArticleRequest) =>
     api.post<APIResponse<Item>>("/standalone-articles", data),
+
+  list: () => api.get<APIResponse<Item[]>>("/standalone-articles"),
 };
 
 // Search APIs

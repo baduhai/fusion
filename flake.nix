@@ -31,7 +31,7 @@
         frontendDist = pkgs.buildNpmPackage {
           name = "fusion-frontend-${version}";
           src = ./frontend;
-          npmDepsHash = "sha256-/CcVE4y+wFakIrJIiRHM5mur52Xe4aSZG3Zshjk++Ag=";
+          npmDepsHash = "sha256-I64qOn+161IbetxSpfrgqWNIniU9Lemw7lPkkuurM4Y=";
           npmBuild = "npm run build";
           installPhase = "cp -r dist $out";
         };

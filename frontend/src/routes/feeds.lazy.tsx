@@ -32,9 +32,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { feedAPI, groupAPI } from "@/lib/api";
+import { feedAPI, groupAPI, standaloneArticleAPI } from "@/lib/api";
 import type { Feed, Group } from "@/lib/api";
-import { generateOPML, downloadFile } from "@/lib/opml";
+import {
+  generateOPML,
+  generateStandaloneArticlesJSON,
+  downloadFile,
+  downloadZip,
+} from "@/lib/opml";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
@@ -148,7 +153,7 @@ function FeedsPage() {
     }
   };
 
-  const handleExport = async () => {
+  const handleExportOpml = async () => {
     setIsExporting(true);
     try {
       const [groupsRes, feedsRes] = await Promise.all([
@@ -156,10 +161,49 @@ function FeedsPage() {
         feedAPI.list(),
       ]);
       const opml = generateOPML(groupsRes.data, feedsRes.data);
-      downloadFile(opml, "fusion-subscriptions.opml", "application/xml");
+      downloadFile(opml, "fusion-feeds.opml", "application/xml");
       toast.success(t("feeds.toast.exported"));
     } catch {
       toast.error(t("feeds.toast.exportFailed"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportStandaloneArticles = async () => {
+    setIsExporting(true);
+    try {
+      const saRes = await standaloneArticleAPI.list();
+      const json = generateStandaloneArticlesJSON(saRes.data ?? []);
+      downloadFile(json, "fusion-standalone-articles.json", "application/json");
+      toast.success(t("feeds.toast.exportStandaloneArticlesSuccess"));
+    } catch {
+      toast.error(t("feeds.toast.exportStandaloneArticlesFailed"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      const [groupsRes, feedsRes, saRes] = await Promise.all([
+        groupAPI.list(),
+        feedAPI.list(),
+        standaloneArticleAPI.list(),
+      ]);
+      const opml = generateOPML(groupsRes.data, feedsRes.data);
+      const json = generateStandaloneArticlesJSON(saRes.data ?? []);
+      await downloadZip(
+        [
+          { name: "feeds.opml", content: opml },
+          { name: "standalone-articles.json", content: json },
+        ],
+        "fusion-export.zip",
+      );
+      toast.success(t("feeds.toast.exportAllSuccess"));
+    } catch {
+      toast.error(t("feeds.toast.exportAllFailed"));
     } finally {
       setIsExporting(false);
     }
@@ -326,17 +370,32 @@ function FeedsPage() {
               <Upload className="h-3.5 w-3.5 sm:mr-1.5" />
               <span className="hidden sm:inline">{t("common.import")}</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              disabled={isExporting}
-            >
-              <Download className="h-3.5 w-3.5 sm:mr-1.5" />
-              <span className="hidden sm:inline">
-                {isExporting ? t("common.exporting") : t("feeds.exportButton")}
-              </span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isExporting}
+                >
+                  <Download className="h-3.5 w-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">
+                    {isExporting ? t("common.exporting") : t("feeds.exportButton")}
+                  </span>
+                  <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportOpml}>
+                  {t("feeds.exportOpml")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportStandaloneArticles}>
+                  {t("feeds.exportStandaloneArticles")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportAll}>
+                  {t("feeds.exportAll")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

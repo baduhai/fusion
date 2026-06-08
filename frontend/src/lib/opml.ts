@@ -1,4 +1,4 @@
-import type { Group, Feed } from "./api/types";
+import type { Feed, Group, Item } from "./api/types";
 
 export interface ParsedFeed {
   name: string;
@@ -117,6 +117,29 @@ export function generateOPML(groups: Group[], feeds: Feed[]): string {
 }
 
 /**
+ * Generates a JSON export of standalone articles.
+ */
+export function generateStandaloneArticlesJSON(articles: Item[]): string {
+  const data = {
+    type: "fusion-standalone-articles-export",
+    version: 1,
+    exported_at: new Date().toISOString(),
+    articles: articles.map((a) => ({
+      id: a.id,
+      feed_id: a.feed_id,
+      guid: a.guid,
+      title: a.title,
+      link: a.link,
+      content: a.content,
+      full_content: a.full_content,
+      pub_date: a.pub_date,
+      created_at: a.created_at,
+    })),
+  };
+  return JSON.stringify(data, null, 2);
+}
+
+/**
  * Triggers a file download in the browser.
  */
 export function downloadFile(
@@ -125,6 +148,29 @@ export function downloadFile(
   mimeType: string,
 ): void {
   const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Creates a ZIP file from named files and triggers a download.
+ */
+export async function downloadZip(
+  files: { name: string; content: string }[],
+  filename: string,
+): Promise<void> {
+  const JSZip = (await import("jszip")).default;
+  const zip = new JSZip();
+  for (const file of files) {
+    zip.file(file.name, file.content);
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

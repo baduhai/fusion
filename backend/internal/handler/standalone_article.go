@@ -106,3 +106,23 @@ func (h *Handler) createStandaloneArticle(c *gin.Context) {
 
 	dataResponse(c, result)
 }
+
+func (h *Handler) listStandaloneArticles(c *gin.Context) {
+	feedID, err := h.store.GetStandaloneFeedID()
+	if err != nil {
+		internalError(c, err, "get standalone feed")
+		return
+	}
+
+	articles, err := h.store.ListItems(store.ListItemsParams{
+		FeedID:  &feedID,
+		Limit:   0,
+		OrderBy: "created_at",
+	})
+	if err != nil {
+		internalError(c, err, "list standalone articles")
+		return
+	}
+
+	dataResponse(c, articles)
+}

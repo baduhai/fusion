@@ -145,6 +145,7 @@ func (h *Handler) SetupRouter() *gin.Engine {
 			auth.GET("/search", h.search)
 
 			auth.POST("/standalone-articles", h.createStandaloneArticle)
+			auth.GET("/standalone-articles", h.listStandaloneArticles)
 
 			auth.GET("/bookmarks", h.listBookmarks)
 			auth.POST("/bookmarks", h.createBookmark)
