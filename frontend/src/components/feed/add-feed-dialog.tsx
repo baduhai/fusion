@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, Plus, Radar, X } from "lucide-react";
 import {
   Dialog,
@@ -59,6 +59,15 @@ export function AddFeedDialog() {
   }
 
   const [url, setUrl] = useState("");
+  const shareUrl = useUIStore((s) => s.shareUrl);
+  const setShareUrl = useUIStore((s) => s.setShareUrl);
+
+  useEffect(() => {
+    if (shareUrl) {
+      setUrl(shareUrl);
+      setShareUrl(null);
+    }
+  }, [shareUrl, setShareUrl]);
   const [name, setName] = useState("");
   const [groupId, setGroupId] = useState<string>("");
   const [proxy, setProxy] = useState("");

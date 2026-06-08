@@ -32,9 +32,24 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   // Close mobile sidebar on navigation
   const location = useLocation();
+
+  const setShareUrl = useUIStore((s) => s.setShareUrl);
+  const setAddChoiceOpen = useUIStore((s) => s.setAddChoiceOpen);
+
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname, location.searchStr, setSidebarOpen]);
+
+  // Detect Web Share Target redirect: ?share-url=...&share-title=...
+  useEffect(() => {
+    const params = new URLSearchParams(location.searchStr);
+    const url = params.get("share-url");
+    if (url) {
+      window.history.replaceState({}, "", location.pathname);
+      setShareUrl(url);
+      setAddChoiceOpen(true);
+    }
+  }, [location.searchStr, setShareUrl, setAddChoiceOpen, location.pathname]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden">

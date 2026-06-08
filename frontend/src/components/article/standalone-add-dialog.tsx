@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -25,6 +25,15 @@ export function StandaloneAddDialog() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [url, setUrl] = useState("");
+  const shareUrl = useUIStore((s) => s.shareUrl);
+  const setShareUrl = useUIStore((s) => s.setShareUrl);
+
+  useEffect(() => {
+    if (shareUrl) {
+      setUrl(shareUrl);
+      setShareUrl(null);
+    }
+  }, [shareUrl, setShareUrl]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {

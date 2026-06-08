@@ -102,6 +102,36 @@ async function staleWhileRevalidate(request) {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+
+  // Handle Web Share Target: browser POSTs shared content to /share-target.
+  // Extract the URL (or text containing a URL) and redirect to the app.
+  if (
+    request.method === "POST" &&
+    new URL(request.url).pathname === "/share-target"
+  ) {
+    event.respondWith(
+      (async () => {
+        const formData = await request.formData();
+        let shareUrl =
+          formData.get("url")?.toString()?.trim() ||
+          formData.get("text")?.toString()?.trim() ||
+          "";
+        if (!shareUrl) {
+          return Response.redirect("/", 302);
+        }
+
+        const params = new URLSearchParams({ "share-url": shareUrl });
+        const shareTitle = formData.get("title")?.toString()?.trim();
+        if (shareTitle) {
+          params.set("share-title", shareTitle);
+        }
+
+        return Response.redirect(`/?${params.toString()}`, 302);
+      })(),
+    );
+    return;
+  }
+
   if (!shouldHandleRequest(request)) {
     return;
   }

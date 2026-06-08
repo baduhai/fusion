@@ -17,6 +17,9 @@ interface UIState {
   // Mobile sidebar
   isSidebarOpen: boolean;
 
+  // Shared URL from Web Share Target
+  shareUrl: string | null;
+
   // Actions
   setSearchOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
@@ -28,6 +31,7 @@ interface UIState {
   setSidebarOpen: (open: boolean) => void;
   setAddStandaloneOpen: (open: boolean) => void;
   setAddChoiceOpen: (open: boolean) => void;
+  setShareUrl: (url: string | null) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -42,6 +46,8 @@ export const useUIStore = create<UIState>((set) => ({
   isSidebarOpen: false,
   isAddStandaloneOpen: false,
   isAddChoiceOpen: false,
+
+  shareUrl: null,
 
   setSearchOpen: (open) => set({ isSearchOpen: open }),
 
@@ -63,4 +69,6 @@ export const useUIStore = create<UIState>((set) => ({
   setAddStandaloneOpen: (open) => set({ isAddStandaloneOpen: open }),
 
   setAddChoiceOpen: (open) => set({ isAddChoiceOpen: open }),
+
+  setShareUrl: (url) => set({ shareUrl: url }),
 }));
