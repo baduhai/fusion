@@ -1,13 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Archive, CheckCheck, Circle, CircleCheck, Loader2, Plus, Trash2 } from "lucide-react";
+import { Archive, Circle, CircleCheck, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArticleItem, type SwipeAction } from "./article-item";
 import { ContentHeader } from "@/components/layout/content-header";
 import { SidebarTrigger } from "@/components/layout/sidebar-trigger";
+import { FloatingActionBar } from "./floating-action-bar";
 import { useArticleNavigation } from "@/hooks/use-keyboard";
 import { useUrlState, type ArticleFilter } from "@/hooks/use-url-state";
 import {
@@ -307,36 +308,28 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     [deleteItem, t],
   );
 
+  const currentFeed = selectedFeedId
+    ? getFeedById(selectedFeedId)
+    : undefined;
+
+  const fabContext = isStandalone
+    ? ("standalone" as const)
+    : selectedFeedId
+    ? ("feed" as const)
+    : selectedGroupId
+    ? ("group" as const)
+    : articleFilter === "inbox"
+    ? ("inbox" as const)
+    : ("all" as const);
+
+  const showArchiveAll = articleFilter === "inbox" && !isStandalone;
+
   return (
     <div className="flex h-full flex-col">
       <ContentHeader>
         <div className="flex min-w-0 items-center gap-1">
           <SidebarTrigger />
           <h2 className="truncate text-lg font-semibold">{title}</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          {articleFilter === "inbox" && !isStandalone && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleArchiveAll}
-              disabled={displayArticles.length === 0}
-              className="gap-1.5 text-xs"
-            >
-              <Archive className="h-4 w-4" />
-              {t("article.list.archiveAll")}
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleMarkAllAsRead}
-            disabled={unreadCount === 0}
-            className="gap-1.5 text-xs"
-          >
-            <CheckCheck className="h-4 w-4" />
-            {t("article.list.markAllRead")}
-          </Button>
         </div>
       </ContentHeader>
 
@@ -498,6 +491,17 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
           </div>
         </ScrollArea>
       </div>
+      <FloatingActionBar
+        context={fabContext}
+        feed={currentFeed}
+        feedId={selectedFeedId ?? undefined}
+        groupId={selectedGroupId ?? undefined}
+        showArchiveAll={showArchiveAll}
+        canMarkAllRead={unreadCount > 0}
+        canArchiveAll={displayArticles.length > 0}
+        onMarkAllRead={handleMarkAllAsRead}
+        onArchiveAll={handleArchiveAll}
+      />
     </div>
   );
 }

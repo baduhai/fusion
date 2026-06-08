@@ -1,34 +1,18 @@
 import { cn } from "@/lib/utils";
 import { useUrlState } from "@/hooks/use-url-state";
-import { useUIStore } from "@/store";
 import { getFaviconUrl } from "@/lib/api/favicon";
 import type { Feed } from "@/lib/api";
 import { FeedFavicon } from "@/components/feed/feed-favicon";
-import { RefreshCw, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useI18n } from "@/lib/i18n";
-import { useRefreshFeed } from "@/queries/feeds";
 
 interface FeedItemProps {
   feed: Feed;
 }
 
 export function FeedItem({ feed }: FeedItemProps) {
-  const { t } = useI18n();
   const { selectedFeedId, setSelectedFeed } = useUrlState();
-  const { setEditFeedOpen } = useUIStore();
-  const refreshFeed = useRefreshFeed();
 
   const isSelected = selectedFeedId === feed.id;
   const faviconUrl = getFaviconUrl(feed.link, feed.site_url);
-
-  const handleSettingsClick = () => {
-    setEditFeedOpen(true, feed);
-  };
-
-  const handleRefreshClick = () => {
-    refreshFeed.mutate(feed.id);
-  };
 
   return (
     <div
@@ -48,33 +32,9 @@ export function FeedItem({ feed }: FeedItemProps) {
         </span>
       </button>
       <div className="ml-2 flex h-6 shrink-0 items-center gap-0.5">
-        <span className="text-[11px] text-muted-foreground md:group-hover:hidden md:group-focus-within:hidden">
+        <span className="text-[11px] text-muted-foreground">
           {feed.unread_count > 0 ? feed.unread_count : ""}
         </span>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          className="inline-flex md:hidden md:group-hover:inline-flex md:group-focus-within:inline-flex"
-          onClick={handleRefreshClick}
-          disabled={refreshFeed.isPending}
-          aria-label={t("sidebar.refreshFeed")}
-        >
-          <RefreshCw
-            className={cn(
-              "text-muted-foreground",
-              refreshFeed.isPending && "animate-spin",
-            )}
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          className="inline-flex md:hidden md:group-hover:inline-flex md:group-focus-within:inline-flex"
-          onClick={handleSettingsClick}
-          aria-label={t("feed.edit.title")}
-        >
-          <Settings className="text-muted-foreground" />
-        </Button>
       </div>
     </div>
   );
