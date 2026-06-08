@@ -12,6 +12,7 @@ interface UIState {
   isImportOpmlOpen: boolean;
   isShortcutsOpen: boolean;
   isAddStandaloneOpen: boolean;
+  isAddChoiceOpen: boolean;
 
   // Mobile sidebar
   isSidebarOpen: boolean;
@@ -26,6 +27,7 @@ interface UIState {
   setShortcutsOpen: (open: boolean) => void;
   setSidebarOpen: (open: boolean) => void;
   setAddStandaloneOpen: (open: boolean) => void;
+  setAddChoiceOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -39,6 +41,7 @@ export const useUIStore = create<UIState>((set) => ({
   isShortcutsOpen: false,
   isSidebarOpen: false,
   isAddStandaloneOpen: false,
+  isAddChoiceOpen: false,
 
   setSearchOpen: (open) => set({ isSearchOpen: open }),
 
@@ -58,4 +61,6 @@ export const useUIStore = create<UIState>((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
 
   setAddStandaloneOpen: (open) => set({ isAddStandaloneOpen: open }),
+
+  setAddChoiceOpen: (open) => set({ isAddChoiceOpen: open }),
 }));
