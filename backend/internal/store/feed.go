@@ -13,7 +13,7 @@ import (
 func (s *Store) ListFeeds() ([]*model.Feed, error) {
 	rows, err := s.db.Query(`
 		SELECT f.id, f.group_id, f.name, f.link, f.site_url,
-		       f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		       f.suspended, f.proxy, f.refresh_interval_seconds, f.auto_fetch_content, f.created_at, f.updated_at,
 		       COALESCE(fs.etag, ''), COALESCE(fs.last_modified, ''), COALESCE(fs.cache_control, ''),
 		       COALESCE(fs.expires_at, 0), COALESCE(fs.last_checked_at, 0), COALESCE(fs.next_check_at, 0),
 		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
@@ -25,7 +25,7 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
 		LEFT JOIN items i ON i.feed_id = f.id
 		GROUP BY f.id, f.group_id, f.name, f.link, f.site_url,
-		         f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		         f.suspended, f.proxy, f.refresh_interval_seconds, f.auto_fetch_content, f.created_at, f.updated_at,
 		         fs.etag, fs.last_modified, fs.cache_control, fs.expires_at, fs.last_checked_at,
 		         fs.next_check_at, fs.last_http_status, fs.retry_after_until, fs.last_success_at,
 		         fs.last_error_at, fs.last_error, fs.consecutive_failures
@@ -41,7 +41,7 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		f := &model.Feed{}
 		var suspended int
 		var autoFetchContent int
-		var refreshIntervalNull sql.NullInt64
+		var refreshIntervalSecondsNull sql.NullInt64
 		if err := rows.Scan(
 			&f.ID,
 			&f.GroupID,
@@ -50,7 +50,7 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 			&f.SiteURL,
 			&suspended,
 			&f.Proxy,
-			&refreshIntervalNull,
+			&refreshIntervalSecondsNull,
 			&autoFetchContent,
 			&f.CreatedAt,
 			&f.UpdatedAt,
@@ -74,8 +74,8 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		}
 		f.Suspended = intToBool(suspended)
 		f.AutoFetchContent = intToBool(autoFetchContent)
-		if refreshIntervalNull.Valid {
-			f.RefreshInterval = &refreshIntervalNull.Int64
+		if refreshIntervalSecondsNull.Valid {
+			f.RefreshIntervalSeconds = &refreshIntervalSecondsNull.Int64
 		}
 		feeds = append(feeds, f)
 	}
@@ -85,7 +85,7 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
 	rows, err := s.db.Query(`
 		SELECT f.id, f.group_id, f.name, f.link, f.site_url,
-		       f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		       f.suspended, f.proxy, f.refresh_interval_seconds, f.auto_fetch_content, f.created_at, f.updated_at,
 		       COALESCE(fs.etag, ''), COALESCE(fs.last_modified, ''), COALESCE(fs.cache_control, ''),
 		       COALESCE(fs.expires_at, 0), COALESCE(fs.last_checked_at, 0), COALESCE(fs.next_check_at, 0),
 		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
@@ -98,7 +98,7 @@ func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
 		LEFT JOIN items i ON i.feed_id = f.id
 		WHERE f.group_id = :group_id
 		GROUP BY f.id, f.group_id, f.name, f.link, f.site_url,
-		         f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		         f.suspended, f.proxy, f.refresh_interval_seconds, f.auto_fetch_content, f.created_at, f.updated_at,
 		         fs.etag, fs.last_modified, fs.cache_control, fs.expires_at, fs.last_checked_at,
 		         fs.next_check_at, fs.last_http_status, fs.retry_after_until, fs.last_success_at,
 		         fs.last_error_at, fs.last_error, fs.consecutive_failures
@@ -114,7 +114,7 @@ func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
 		f := &model.Feed{}
 		var suspended int
 		var autoFetchContent int
-		var refreshIntervalNull sql.NullInt64
+		var refreshIntervalSecondsNull sql.NullInt64
 		if err := rows.Scan(
 			&f.ID,
 			&f.GroupID,
@@ -123,7 +123,7 @@ func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
 			&f.SiteURL,
 			&suspended,
 			&f.Proxy,
-			&refreshIntervalNull,
+			&refreshIntervalSecondsNull,
 			&autoFetchContent,
 			&f.CreatedAt,
 			&f.UpdatedAt,
@@ -147,8 +147,8 @@ func (s *Store) ListFeedsByGroup(groupID int64) ([]*model.Feed, error) {
 		}
 		f.Suspended = intToBool(suspended)
 		f.AutoFetchContent = intToBool(autoFetchContent)
-		if refreshIntervalNull.Valid {
-			f.RefreshInterval = &refreshIntervalNull.Int64
+		if refreshIntervalSecondsNull.Valid {
+			f.RefreshIntervalSeconds = &refreshIntervalSecondsNull.Int64
 		}
 		feeds = append(feeds, f)
 	}
@@ -159,10 +159,10 @@ func (s *Store) GetFeedByLink(link string) (*model.Feed, error) {
 	f := &model.Feed{}
 	var suspended int
 	var autoFetchContent int
-	var refreshIntervalNull sql.NullInt64
+	var refreshIntervalSecondsNull sql.NullInt64
 	err := s.db.QueryRow(`
 		SELECT f.id, f.group_id, f.name, f.link, f.site_url,
-		       f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		       f.suspended, f.proxy, f.refresh_interval_seconds, f.auto_fetch_content, f.created_at, f.updated_at,
 		       COALESCE(fs.etag, ''), COALESCE(fs.last_modified, ''), COALESCE(fs.cache_control, ''),
 		       COALESCE(fs.expires_at, 0), COALESCE(fs.last_checked_at, 0), COALESCE(fs.next_check_at, 0),
 		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
@@ -178,7 +178,7 @@ func (s *Store) GetFeedByLink(link string) (*model.Feed, error) {
 		&f.SiteURL,
 		&suspended,
 		&f.Proxy,
-		&refreshIntervalNull,
+		&refreshIntervalSecondsNull,
 		&autoFetchContent,
 		&f.CreatedAt,
 		&f.UpdatedAt,
@@ -204,8 +204,8 @@ func (s *Store) GetFeedByLink(link string) (*model.Feed, error) {
 
 	f.Suspended = intToBool(suspended)
 	f.AutoFetchContent = intToBool(autoFetchContent)
-	if refreshIntervalNull.Valid {
-		f.RefreshInterval = &refreshIntervalNull.Int64
+	if refreshIntervalSecondsNull.Valid {
+		f.RefreshIntervalSeconds = &refreshIntervalSecondsNull.Int64
 	}
 	return f, nil
 }
@@ -228,10 +228,10 @@ func (s *Store) GetFeed(id int64) (*model.Feed, error) {
 	f := &model.Feed{}
 	var suspended int
 	var autoFetchContent int
-	var refreshIntervalNull sql.NullInt64
+	var refreshIntervalSecondsNull sql.NullInt64
 	err := s.db.QueryRow(`
 		SELECT f.id, f.group_id, f.name, f.link, f.site_url,
-		       f.suspended, f.proxy, f.refresh_interval, f.auto_fetch_content, f.created_at, f.updated_at,
+		       f.suspended, f.proxy, f.refresh_interval_seconds, f.auto_fetch_content, f.created_at, f.updated_at,
 		       COALESCE(fs.etag, ''), COALESCE(fs.last_modified, ''), COALESCE(fs.cache_control, ''),
 		       COALESCE(fs.expires_at, 0), COALESCE(fs.last_checked_at, 0), COALESCE(fs.next_check_at, 0),
 		       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
@@ -247,7 +247,7 @@ func (s *Store) GetFeed(id int64) (*model.Feed, error) {
 		&f.SiteURL,
 		&suspended,
 		&f.Proxy,
-		&refreshIntervalNull,
+		&refreshIntervalSecondsNull,
 		&autoFetchContent,
 		&f.CreatedAt,
 		&f.UpdatedAt,
@@ -273,13 +273,13 @@ func (s *Store) GetFeed(id int64) (*model.Feed, error) {
 
 	f.Suspended = intToBool(suspended)
 	f.AutoFetchContent = intToBool(autoFetchContent)
-	if refreshIntervalNull.Valid {
-		f.RefreshInterval = &refreshIntervalNull.Int64
+	if refreshIntervalSecondsNull.Valid {
+		f.RefreshIntervalSeconds = &refreshIntervalSecondsNull.Int64
 	}
 	return f, nil
 }
 
-func (s *Store) CreateFeed(groupID int64, name, link, siteURL, proxy string, refreshInterval *int64, autoFetchContent bool) (*model.Feed, error) {
+func (s *Store) CreateFeed(groupID int64, name, link, siteURL, proxy string, refreshIntervalSeconds *int64, autoFetchContent bool) (*model.Feed, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -287,10 +287,10 @@ func (s *Store) CreateFeed(groupID int64, name, link, siteURL, proxy string, ref
 	defer tx.Rollback()
 
 	result, err := tx.Exec(`
-		INSERT INTO feeds (group_id, name, link, site_url, proxy, refresh_interval, auto_fetch_content)
-		VALUES (:group_id, :name, :link, :site_url, :proxy, :refresh_interval, :auto_fetch_content)
+		INSERT INTO feeds (group_id, name, link, site_url, proxy, refresh_interval_seconds, auto_fetch_content)
+		VALUES (:group_id, :name, :link, :site_url, :proxy, :refresh_interval_seconds, :auto_fetch_content)
 	`, sql.Named("group_id", groupID), sql.Named("name", name), sql.Named("link", link),
-		sql.Named("site_url", siteURL), sql.Named("proxy", proxy), sql.Named("refresh_interval", refreshInterval),
+		sql.Named("site_url", siteURL), sql.Named("proxy", proxy), sql.Named("refresh_interval_seconds", refreshIntervalSeconds),
 		sql.Named("auto_fetch_content", boolToInt(autoFetchContent)))
 	if err != nil {
 		return nil, err
@@ -354,7 +354,7 @@ type UpdateFeedParams struct {
 	SiteURL          *string
 	Suspended        *bool
 	Proxy            *string
-	RefreshInterval  *int64
+	RefreshIntervalSeconds  *int64
 	AutoFetchContent *bool
 }
 
@@ -387,12 +387,12 @@ func (s *Store) UpdateFeed(id int64, params UpdateFeedParams) error {
 		setClauses = append(setClauses, "proxy = :proxy")
 		args = append(args, sql.Named("proxy", *params.Proxy))
 	}
-	if params.RefreshInterval != nil {
-		if *params.RefreshInterval == -1 {
-			setClauses = append(setClauses, "refresh_interval = NULL")
+	if params.RefreshIntervalSeconds != nil {
+		if *params.RefreshIntervalSeconds == -1 {
+			setClauses = append(setClauses, "refresh_interval_seconds = NULL")
 		} else {
-			setClauses = append(setClauses, "refresh_interval = :refresh_interval")
-			args = append(args, sql.Named("refresh_interval", *params.RefreshInterval))
+			setClauses = append(setClauses, "refresh_interval_seconds = :refresh_interval_seconds")
+			args = append(args, sql.Named("refresh_interval_seconds", *params.RefreshIntervalSeconds))
 		}
 	}
 	if params.AutoFetchContent != nil {
@@ -472,6 +472,16 @@ func (s *Store) UpdateFeed(id int64, params UpdateFeedParams) error {
 				last_error = '',
 				consecutive_failures = 0,
 				updated_at = unixepoch()
+		`, sql.Named("feed_id", id)); err != nil {
+			return err
+		}
+	}
+
+	if params.RefreshIntervalSeconds != nil {
+		if _, err := tx.Exec(`
+			UPDATE feed_fetch_state
+			SET next_check_at = unixepoch(), updated_at = unixepoch()
+			WHERE feed_id = :feed_id
 		`, sql.Named("feed_id", id)); err != nil {
 			return err
 		}
