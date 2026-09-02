@@ -14,7 +14,7 @@ export interface Feed {
   site_url?: string;
   suspended: boolean;
   proxy?: string;
-  refresh_interval?: number | null;
+  refresh_interval_seconds?: number | null;
   created_at: number;
   updated_at: number;
   fetch_state: FeedFetchState;
@@ -89,10 +89,9 @@ export interface CreateFeedRequest {
   name: string;
   link: string;
   site_url?: string;
-proxy?: string;
-  refresh_interval?: number | null;
+  proxy?: string;
+  refresh_interval_seconds?: number | null;
 }
-
 
 export interface UpdateFeedRequest {
   group_id?: number;
@@ -101,7 +100,7 @@ export interface UpdateFeedRequest {
   site_url?: string;
   suspended?: boolean;
   proxy?: string;
-  refresh_interval?: number | null;
+  refresh_interval_seconds?: number | null;
 }
 
 export interface ValidateFeedRequest {

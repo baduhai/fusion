@@ -18,22 +18,22 @@ import (
 )
 
 type createFeedRequest struct {
-	GroupID         int64  `json:"group_id" binding:"required"`
-	Name            string `json:"name" binding:"required"`
-	Link            string `json:"link" binding:"required"`
-	SiteURL         string `json:"site_url"`
-	Proxy           string `json:"proxy"`
-	RefreshInterval *int64 `json:"refresh_interval"`
+	GroupID                int64  `json:"group_id" binding:"required"`
+	Name                   string `json:"name" binding:"required"`
+	Link                   string `json:"link" binding:"required"`
+	SiteURL                string `json:"site_url"`
+	Proxy                  string `json:"proxy"`
+	RefreshIntervalSeconds *int64 `json:"refresh_interval_seconds"`
 }
 
 type updateFeedRequest struct {
-	GroupID         *int64  `json:"group_id"`
-	Name            *string `json:"name"`
-	Link            *string `json:"link"`
-	SiteURL         *string `json:"site_url"`
-	Suspended       *bool   `json:"suspended"`
-	Proxy           *string `json:"proxy"`
-	RefreshInterval *int64  `json:"refresh_interval"`
+	GroupID                *int64  `json:"group_id"`
+	Name                   *string `json:"name"`
+	Link                   *string `json:"link"`
+	SiteURL                *string `json:"site_url"`
+	Suspended              *bool   `json:"suspended"`
+	Proxy                  *string `json:"proxy"`
+	RefreshIntervalSeconds *int64  `json:"refresh_interval_seconds"`
 }
 
 type validateFeedRequest struct {
@@ -79,7 +79,7 @@ func validateRefreshInterval(v *int64) error {
 		return nil
 	}
 	if !allowedRefreshIntervals[*v] {
-		return fmt.Errorf("invalid refresh_interval: must be one of 900, 1800, 3600, 7200, 21600, 43200, 86400")
+		return fmt.Errorf("invalid refresh_interval_seconds: must be one of 900, 1800, 3600, 7200, 21600, 43200, 86400")
 	}
 	return nil
 }
@@ -132,12 +132,12 @@ func (h *Handler) createFeed(c *gin.Context) {
 		badRequestError(c, "invalid link")
 		return
 	}
-	if err := validateRefreshInterval(req.RefreshInterval); err != nil {
+	if err := validateRefreshInterval(req.RefreshIntervalSeconds); err != nil {
 		badRequestError(c, err.Error())
 		return
 	}
 
-	feed, err := h.store.CreateFeed(req.GroupID, req.Name, req.Link, req.SiteURL, req.Proxy, req.RefreshInterval)
+	feed, err := h.store.CreateFeed(req.GroupID, req.Name, req.Link, req.SiteURL, req.Proxy, req.RefreshIntervalSeconds)
 	if err != nil {
 		internalError(c, err, "create feed")
 		return
@@ -168,7 +168,7 @@ func (h *Handler) updateFeed(c *gin.Context) {
 		badRequestError(c, "invalid request")
 		return
 	}
-	if err := validateRefreshInterval(req.RefreshInterval); err != nil {
+	if err := validateRefreshInterval(req.RefreshIntervalSeconds); err != nil {
 		badRequestError(c, err.Error())
 		return
 	}
@@ -196,12 +196,12 @@ func (h *Handler) updateFeed(c *gin.Context) {
 	if req.Proxy != nil {
 		params.Proxy = req.Proxy
 	}
-	if req.RefreshInterval != nil {
-		if *req.RefreshInterval == 0 {
+	if req.RefreshIntervalSeconds != nil {
+		if *req.RefreshIntervalSeconds == 0 {
 			nilInterval := int64(-1)
-			params.RefreshInterval = &nilInterval
+			params.RefreshIntervalSeconds = &nilInterval
 		} else {
-			params.RefreshInterval = req.RefreshInterval
+			params.RefreshIntervalSeconds = req.RefreshIntervalSeconds
 		}
 	}
 

@@ -147,7 +147,7 @@ export function AddFeedDialog() {
       }
 
       if (refreshInterval !== "default") {
-        request.refresh_interval = parseInt(refreshInterval, 10);
+        request.refresh_interval_seconds = parseInt(refreshInterval, 10);
       }
 
       await createFeed.mutateAsync(request);

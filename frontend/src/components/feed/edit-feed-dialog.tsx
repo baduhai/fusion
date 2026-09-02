@@ -84,12 +84,12 @@ export function EditFeedDialog() {
       setGroupId(editingFeed.group_id.toString());
       setProxy(editingFeed.proxy ?? "");
       setSuspended(editingFeed.suspended);
-      if (editingFeed.refresh_interval != null) {
-        setRefreshInterval(editingFeed.refresh_interval.toString());
+      if (editingFeed.refresh_interval_seconds != null) {
+        setRefreshInterval(editingFeed.refresh_interval_seconds.toString());
       } else {
         setRefreshInterval("default");
       }
-      setIsAdvancedOpen(!!editingFeed.proxy || editingFeed.refresh_interval != null);
+      setIsAdvancedOpen(!!editingFeed.proxy || editingFeed.refresh_interval_seconds != null);
       setIsMobileErrorTooltipOpen(false);
     }
   }, [editingFeed]);
@@ -151,13 +151,13 @@ export function EditFeedDialog() {
       }
 
       if (refreshInterval === "default") {
-        if (editingFeed.refresh_interval != null) {
-          request.refresh_interval = 0;
+        if (editingFeed.refresh_interval_seconds != null) {
+          request.refresh_interval_seconds = 0;
         }
       } else {
         const newVal = parseInt(refreshInterval, 10);
-        if (editingFeed.refresh_interval !== newVal) {
-          request.refresh_interval = newVal;
+        if (editingFeed.refresh_interval_seconds !== newVal) {
+          request.refresh_interval_seconds = newVal;
         }
       }
 

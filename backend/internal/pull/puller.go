@@ -26,8 +26,8 @@ type Puller struct {
 }
 
 func (p *Puller) effectiveInterval(feed *model.Feed) time.Duration {
-	if feed.RefreshInterval != nil && *feed.RefreshInterval > 0 {
-		return time.Duration(*feed.RefreshInterval) * time.Second
+	if feed.RefreshIntervalSeconds != nil && *feed.RefreshIntervalSeconds > 0 {
+		return time.Duration(*feed.RefreshIntervalSeconds) * time.Second
 	}
 	return p.interval
 }
