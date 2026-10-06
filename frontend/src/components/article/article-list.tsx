@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Archive, Circle, CircleCheck, Loader2, Plus, Trash2 } from "lucide-react";
@@ -53,6 +53,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const [starredUnreadOverrides, setStarredUnreadOverrides] = useState<
     Record<number, boolean>
   >({});
+  const listContentRef = useRef<HTMLDivElement>(null);
 
   const isStandalone = standaloneFeedId !== undefined;
   const deleteItem = useDeleteItem();
@@ -129,6 +130,14 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   useArticleNavigation(articleIds, {
     enabled: selectedArticleId === null,
   });
+
+  // Focus the list content so the browser natively routes PageUp/PageDown to
+  // the list's scroll viewport while no article is open.
+  useEffect(() => {
+    if (selectedArticleId === null) {
+      listContentRef.current?.focus({ preventScroll: true });
+    }
+  }, [selectedArticleId]);
 
   // Determine title
   let title = t("article.list.all");
@@ -366,7 +375,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
 
         {/* Article list */}
         <ScrollArea className="min-h-0 flex-1">
-          <div>
+          <div ref={listContentRef} tabIndex={-1} className="outline-none">
             {isLoading && articles.length === 0 ? (
               <div className="space-y-2 p-2">
                 {[1, 2, 3, 4, 5].map((i) => (

@@ -108,6 +108,7 @@ export function ArticleDrawer() {
 
   const autoMarkRead = usePreferencesStore((s) => s.autoMarkRead);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const articleRef = useRef<HTMLElement>(null);
   const autoMarkedRef = useRef<number | null>(null);
   const addedToInboxRef = useRef<number | null>(null);
 
@@ -152,6 +153,22 @@ export function ArticleDrawer() {
     autoMarkedRef.current = null;
     addedToInboxRef.current = null;
   }
+
+  // Focus the article so the browser natively routes PageUp/PageDown (and
+  // Space/Home/End) to the surrounding scroll viewport. Reset scroll on change.
+  const activeArticleId = article?.id ?? null;
+  useEffect(() => {
+    if (activeArticleId === null) {
+      return;
+    }
+    const viewport = scrollAreaRef.current?.querySelector<HTMLDivElement>(
+      '[data-slot="scroll-area-viewport"]',
+    );
+    if (viewport) {
+      viewport.scrollTop = 0;
+    }
+    articleRef.current?.focus({ preventScroll: true });
+  }, [activeArticleId]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -243,6 +260,10 @@ export function ArticleDrawer() {
         side="right"
         className="w-full sm:max-w-[max(720px,50vw)] p-0"
         showCloseButton={false}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          articleRef.current?.focus();
+        }}
       >
         {article && (
           <div className="flex h-full flex-col">
@@ -361,7 +382,11 @@ export function ArticleDrawer() {
 
             {/* Content */}
             <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1">
-              <article className="min-w-0 px-5 py-6 sm:px-12 sm:py-8">
+              <article
+                ref={articleRef}
+                tabIndex={-1}
+                className="min-w-0 px-5 py-6 outline-none sm:px-12 sm:py-8"
+              >
                 <div className="space-y-3">
                   <h1 className="text-[28px] font-bold leading-[1.3]">
                     {article.title}
