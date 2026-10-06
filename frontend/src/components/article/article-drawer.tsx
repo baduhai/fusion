@@ -328,20 +328,6 @@ export function ArticleDrawer() {
                     ? t("article.action.fetchingContent")
                     : t("article.action.fetchContent")}
                 </Button>
-                {isStandalone && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRemove}
-                    disabled={deleteItem.isPending}
-                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                    {deleteItem.isPending
-                      ? t("common.deleting")
-                      : t("standalone.remove")}
-                  </Button>
-                )}
                 <Button
                   asChild={Boolean(safeArticleLink)}
                   variant="outline"
@@ -366,6 +352,20 @@ export function ArticleDrawer() {
                     </>
                   )}
                 </Button>
+                {isStandalone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemove}
+                    disabled={deleteItem.isPending}
+                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                    {deleteItem.isPending
+                      ? t("common.deleting")
+                      : t("standalone.remove")}
+                  </Button>
+                )}
               </div>
 
               <SheetTitle className="sr-only">{article.title}</SheetTitle>
