@@ -139,6 +139,11 @@ func TestRefreshAllWaitsForRunningJobs(t *testing.T) {
 		t.Fatalf("list feeds: %v", err)
 	}
 	for _, feed := range feeds {
+		// RefreshAll skips suspended feeds; the standalone-articles feed is
+		// suspended and never pulled.
+		if feed.Suspended {
+			continue
+		}
 		if feed.FetchState.LastSuccessAt <= 0 {
 			t.Fatalf("feed %d last_success_at = %d, want > 0", feed.ID, feed.FetchState.LastSuccessAt)
 		}

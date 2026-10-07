@@ -47,7 +47,7 @@ export function AddFeedDialog() {
   const { data: groups = [] } = useGroups();
   const createFeed = useCreateFeed();
 
-  const { data: appInfo } = useAppInfo();
+  const { data: appInfo, isLoading: appInfoLoading } = useAppInfo();
   const globalPullInterval = appInfo?.pull_interval ?? DEFAULT_PULL_INTERVAL;
   const options = intervalOptions(
     globalPullInterval,
@@ -299,6 +299,7 @@ export function AddFeedDialog() {
                     {t("feed.add.refreshFrequencyLabel")}
                   </label>
                   <Select
+                    disabled={appInfoLoading}
                     value={refreshInterval || String(globalPullInterval)}
                     onValueChange={(v) => v && setRefreshInterval(v)}
                   >
