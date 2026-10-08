@@ -62,11 +62,26 @@ export function formatRelativeTime(timestamp: number): string {
   return rtf.format(years, "year");
 }
 
+// Zero-width and word-joiner characters frequently shipped as invisible
+// padding by feed generators, plus BOM. They create unbreakable text runs.
+const INVISIBLE_CHARS = /[\u200B-\u200D\u2060\uFEFF]/g;
+
+function htmlToPlainText(html: string): string {
+  // Extract real text (decoding entities like &nbsp;) instead of the encoded
+  // HTML string that DOMPurify returns by default.
+  const fragment = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [],
+    RETURN_DOM_FRAGMENT: true,
+  }) as DocumentFragment;
+
+  return (fragment.textContent ?? "")
+    .replace(INVISIBLE_CHARS, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function extractSummary(html: string, maxLength = 120): string {
-  // Strip all HTML tags to get plain text
-  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
-  // Normalize whitespace
-  const text = clean.replace(/\s+/g, " ").trim();
+  const text = htmlToPlainText(html);
   if (text.length <= maxLength) return text;
   // Truncate and add ellipsis
   return text.slice(0, maxLength).trimEnd() + "…";
@@ -75,8 +90,7 @@ export function extractSummary(html: string, maxLength = 120): string {
 const WORDS_PER_MINUTE = 238;
 
 export function estimateReadingTimeMinutes(html: string): number {
-  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
-  const text = clean.replace(/\s+/g, " ").trim();
+  const text = htmlToPlainText(html);
   if (!text) return 0;
   const wordCount = text.split(/\s+/).length;
   return Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE));
