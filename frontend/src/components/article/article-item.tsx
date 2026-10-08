@@ -170,13 +170,13 @@ export function ArticleItem({
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h3
             className={cn(
-              "line-clamp-2 text-[15px] leading-snug font-medium",
+              "wrap-anywhere line-clamp-2 text-[15px] leading-snug font-medium",
               article.unread ? "text-foreground" : "text-muted-foreground",
             )}
           >
             {article.title}
           </h3>
-          <p className="line-clamp-2 text-sm text-muted-foreground">
+          <p className="wrap-anywhere line-clamp-2 text-sm text-muted-foreground">
             {extractSummary(article.content, 150)}
           </p>
           <div className="flex items-center gap-2 text-xs">
