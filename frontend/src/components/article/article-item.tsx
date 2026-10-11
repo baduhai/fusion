@@ -6,6 +6,7 @@ import type { Item } from "@/lib/api";
 import { FeedFavicon } from "@/components/feed/feed-favicon";
 import { toSafeExternalUrl } from "@/lib/safe-url";
 import { useSwipe } from "@/hooks/use-swipe";
+import { SelectionCheckbox } from "./selection-checkbox";
 
 export interface SwipeAction {
   icon: React.ReactNode;
@@ -26,6 +27,9 @@ interface ArticleItemProps {
   onRemove?: (id: number) => Promise<void>;
   onArchive?: (id: number) => Promise<void>;
   swipeActions?: { left?: SwipeAction; right?: SwipeAction };
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelection?: (id: number) => void;
 }
 
 export function ArticleItem({
@@ -41,6 +45,9 @@ export function ArticleItem({
   onRemove,
   onArchive,
   swipeActions,
+  selectionMode = false,
+  selected = false,
+  onToggleSelection,
 }: ArticleItemProps) {
   const { t } = useI18n();
 
@@ -120,6 +127,14 @@ export function ArticleItem({
     }
   };
 
+  const handleActivate = () => {
+    if (selectionMode) {
+      onToggleSelection?.(article.id);
+      return;
+    }
+    onSelectArticle(article.id);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -151,11 +166,11 @@ export function ArticleItem({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => onSelectArticle(article.id)}
+        onClick={handleActivate}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onSelectArticle(article.id);
+            handleActivate();
           }
         }}
         className={cn(
@@ -163,9 +178,19 @@ export function ArticleItem({
           state === "idle" ? "duration-200" : "",
           "group flex w-full cursor-pointer items-start gap-4 border-b px-4 py-4 text-left hover:bg-accent/50",
           isSelected && "bg-accent",
+          selectionMode && selected && "bg-accent",
         )}
         style={{ transform: `translateX(${offsetX}px)` }}
       >
+        {selectionMode && (
+          <SelectionCheckbox
+            checked={selected}
+            onToggle={() => onToggleSelection?.(article.id)}
+            ariaLabel={article.title}
+            disabled={!canToggleRead}
+            className="mt-0.5"
+          />
+        )}
         {/* Article Content */}
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h3
@@ -196,7 +221,8 @@ export function ArticleItem({
         </div>
 
         {/* Article Actions */}
-        <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex">
+        {!selectionMode && (
+          <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -293,6 +319,7 @@ export function ArticleItem({
             </Button>
           )}
         </div>
+        )}
       </div>
     </div>
   );

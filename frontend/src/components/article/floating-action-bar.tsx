@@ -1,4 +1,4 @@
-import { RefreshCw, Settings, CheckCheck, Archive } from "lucide-react";
+import { RefreshCw, Settings, CheckCheck, Archive, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -22,6 +22,9 @@ export interface FloatingActionBarProps {
   canArchiveAll: boolean;
   onMarkAllRead: () => void;
   onArchiveAll: () => void;
+  selectionMode: boolean;
+  onToggleSelectionMode: () => void;
+  canSelect: boolean;
 }
 
 export function FloatingActionBar({
@@ -34,6 +37,9 @@ export function FloatingActionBar({
   canArchiveAll,
   onMarkAllRead,
   onArchiveAll,
+  selectionMode,
+  onToggleSelectionMode,
+  canSelect,
 }: FloatingActionBarProps) {
   const { t } = useI18n();
   const { setEditFeedOpen } = useUIStore();
@@ -42,6 +48,13 @@ export function FloatingActionBar({
 
   const showRefresh = context === "feed" || context === "group";
   const showSettings = context === "feed" && feed;
+
+  const markReadLabel = selectionMode
+    ? t("article.list.markSelectedRead")
+    : t("article.list.markAllRead");
+  const archiveLabel = selectionMode
+    ? t("article.list.archiveSelected")
+    : t("article.list.archiveAll");
 
   const handleRefresh = () => {
     if (context === "feed" && feedId) {
@@ -58,6 +71,29 @@ export function FloatingActionBar({
   return (
     <div className="fixed bottom-6 right-6 z-40 rounded-lg border bg-background shadow-md p-1">
       <div className="flex flex-col gap-0.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={selectionMode ? "secondary" : "ghost"}
+              size="icon"
+              onClick={onToggleSelectionMode}
+              disabled={!canSelect}
+              aria-label={
+                selectionMode
+                  ? t("article.list.exitSelectMode")
+                  : t("article.list.selectMode")
+              }
+              aria-pressed={selectionMode}
+            >
+              <ListChecks />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {selectionMode
+              ? t("article.list.exitSelectMode")
+              : t("article.list.selectMode")}
+          </TooltipContent>
+        </Tooltip>
         {showRefresh && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -106,12 +142,12 @@ export function FloatingActionBar({
               size="icon"
               onClick={onMarkAllRead}
               disabled={!canMarkAllRead}
-              aria-label={t("article.list.markAllRead")}
+              aria-label={markReadLabel}
             >
               <CheckCheck />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{t("article.list.markAllRead")}</TooltipContent>
+          <TooltipContent>{markReadLabel}</TooltipContent>
         </Tooltip>
         {showArchiveAll && (
           <Tooltip>
@@ -121,12 +157,12 @@ export function FloatingActionBar({
                 size="icon"
                 onClick={onArchiveAll}
                 disabled={!canArchiveAll}
-                aria-label={t("article.list.archiveAll")}
+                aria-label={archiveLabel}
               >
                 <Archive />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t("article.list.archiveAll")}</TooltipContent>
+            <TooltipContent>{archiveLabel}</TooltipContent>
           </Tooltip>
         )}
       </div>

@@ -9,6 +9,7 @@ import { ArticleItem, type SwipeAction } from "./article-item";
 import { ContentHeader } from "@/components/layout/content-header";
 import { SidebarTrigger } from "@/components/layout/sidebar-trigger";
 import { FloatingActionBar } from "./floating-action-bar";
+import { SelectionCheckbox } from "./selection-checkbox";
 import { useArticleNavigation } from "@/hooks/use-keyboard";
 import { useUrlState, type ArticleFilter } from "@/hooks/use-url-state";
 import {
@@ -38,6 +39,8 @@ interface ArticleListProps {
   standaloneFeedId?: number;
 }
 
+const EMPTY_SELECTION = new Set<number>();
+
 export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -53,6 +56,12 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const [starredUnreadOverrides, setStarredUnreadOverrides] = useState<
     Record<number, boolean>
   >({});
+  const [selectionMode, setSelectionMode] = useState(false);
+  // Selection is scoped to the current view; storing the context alongside the
+  // ids lets us drop stale selections without a reset effect.
+  const [selection, setSelection] = useState<{ context: string; ids: Set<number> }>(
+    { context: "\u0000", ids: EMPTY_SELECTION },
+  );
   const listContentRef = useRef<HTMLDivElement>(null);
 
   const isStandalone = standaloneFeedId !== undefined;
@@ -63,6 +72,20 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
 
   const effectiveFeedId = isStandalone ? standaloneFeedId : selectedFeedId;
   const effectiveGroupId = isStandalone ? null : selectedGroupId;
+
+  const selectionContext = `${effectiveFeedId ?? ""}|${effectiveGroupId ?? ""}|${articleFilter}|${isStandalone ? 1 : 0}`;
+  const selectedIds =
+    selection.context === selectionContext ? selection.ids : EMPTY_SELECTION;
+
+  const updateSelection = useCallback(
+    (updater: (prev: Set<number>) => Set<number>) => {
+      setSelection((prev) => ({
+        context: selectionContext,
+        ids: updater(prev.context === selectionContext ? prev.ids : EMPTY_SELECTION),
+      }));
+    },
+    [selectionContext],
+  );
 
   // Items query for non-starred modes
   const itemsQuery = useItems({
@@ -121,6 +144,24 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     [articles, getArticleUnread],
   );
 
+  const selectableArticles = useMemo(
+    () => displayArticles.filter((article) => article.id > 0),
+    [displayArticles],
+  );
+
+  const selectedVisibleIds = useMemo(
+    () =>
+      displayArticles
+        .filter((article) => article.id > 0 && selectedIds.has(article.id))
+        .map((article) => article.id),
+    [displayArticles, selectedIds],
+  );
+
+  const isAllSelected =
+    selectableArticles.length > 0 &&
+    selectedVisibleIds.length === selectableArticles.length;
+  const isSomeSelected = selectedVisibleIds.length > 0 && !isAllSelected;
+
   const hasMore = isStarredMode ? false : itemsQuery.hasNextPage;
   const isLoading = isStarredMode ? false : itemsQuery.isLoading;
   const isLoadingMore = itemsQuery.isFetchingNextPage;
@@ -128,7 +169,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   // Setup keyboard navigation
   const articleIds = displayArticles.map((a) => a.id);
   useArticleNavigation(articleIds, {
-    enabled: selectedArticleId === null,
+    enabled: !selectionMode && selectedArticleId === null,
   });
 
   // Focus the list content so the browser natively routes PageUp/PageDown to
@@ -235,13 +276,49 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     [archiveItems],
   );
 
+  const handleToggleSelection = useCallback(
+    (id: number) => {
+      if (id <= 0) return;
+      updateSelection((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    },
+    [updateSelection],
+  );
+
+  const handleToggleSelectAll = useCallback(() => {
+    updateSelection((prev) => {
+      const allSelected =
+        selectableArticles.length > 0 &&
+        selectableArticles.every((article) => prev.has(article.id));
+      return allSelected
+        ? new Set()
+        : new Set(selectableArticles.map((article) => article.id));
+    });
+  }, [selectableArticles, updateSelection]);
+
+  const handleToggleSelectionMode = useCallback(() => {
+    setSelectionMode((prev) => !prev);
+    updateSelection(() => new Set());
+  }, [updateSelection]);
+
   const handleMarkAllAsRead = async () => {
-    let unreadIds = displayArticles
+    const targetArticles = selectionMode
+      ? displayArticles.filter((a) => selectedIds.has(a.id))
+      : displayArticles;
+
+    let unreadIds = targetArticles
       .filter((a) => a.unread && a.id > 0)
       .map((a) => a.id);
 
     if (isStarredMode) {
-      const ids = displayArticles.filter((a) => a.id > 0).map((a) => a.id);
+      const ids = targetArticles.filter((a) => a.id > 0).map((a) => a.id);
       const detailEntries = await Promise.all(
         ids.map(async (id) => {
           try {
@@ -274,16 +351,29 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
           return next;
         });
       }
+
+      if (selectionMode) {
+        updateSelection(() => new Set());
+      }
     } catch (error) {
       console.error("Failed to mark all as read:", error);
     }
   };
 
   const handleArchiveAll = async () => {
-    const ids = displayArticles.filter((a) => a.id > 0).map((a) => a.id);
+    const ids = (selectionMode
+      ? displayArticles.filter((a) => selectedIds.has(a.id))
+      : displayArticles
+    )
+      .filter((a) => a.id > 0)
+      .map((a) => a.id);
+
     if (ids.length === 0) return;
     try {
       await archiveItems.mutateAsync(ids);
+      if (selectionMode) {
+        updateSelection(() => new Set());
+      }
     } catch (error) {
       console.error("Failed to archive all:", error);
     }
@@ -369,6 +459,33 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
                   {t("standalone.addArticle")}
                 </Button>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Selection controls - shown while selecting entries */}
+        {selectionMode && selectableArticles.length > 0 && (
+          <div className="flex items-center gap-1">
+            <SelectionCheckbox
+              checked={isAllSelected}
+              indeterminate={isSomeSelected}
+              onToggle={handleToggleSelectAll}
+              ariaLabel={t("article.list.selectAll")}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-sm text-muted-foreground"
+              onClick={handleToggleSelectAll}
+            >
+              {t("article.list.selectAll")}
+            </Button>
+            {selectedVisibleIds.length > 0 && (
+              <span className="ml-auto text-xs text-muted-foreground">
+                {t("article.list.selectedCount", {
+                  count: selectedVisibleIds.length,
+                })}
+              </span>
             )}
           </div>
         )}
@@ -474,6 +591,9 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
                       onRemove={isStandalone ? handleRemoveArticle : undefined}
                       onArchive={articleFilter === "inbox" && !isStandalone ? handleArchive : undefined}
                       swipeActions={swipeActions}
+                      selectionMode={selectionMode}
+                      selected={selectedIds.has(article.id)}
+                      onToggleSelection={handleToggleSelection}
                     />
                   );
                 })}
@@ -506,10 +626,13 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
         feedId={selectedFeedId ?? undefined}
         groupId={selectedGroupId ?? undefined}
         showArchiveAll={showArchiveAll}
-        canMarkAllRead={unreadCount > 0}
-        canArchiveAll={displayArticles.length > 0}
+        canMarkAllRead={selectionMode ? selectedVisibleIds.length > 0 : unreadCount > 0}
+        canArchiveAll={selectionMode ? selectedVisibleIds.length > 0 : displayArticles.length > 0}
         onMarkAllRead={handleMarkAllAsRead}
         onArchiveAll={handleArchiveAll}
+        selectionMode={selectionMode}
+        onToggleSelectionMode={handleToggleSelectionMode}
+        canSelect={selectableArticles.length > 0}
       />
     </div>
   );
