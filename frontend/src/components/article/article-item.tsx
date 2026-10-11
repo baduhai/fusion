@@ -174,8 +174,10 @@ export function ArticleItem({
           }
         }}
         className={cn(
-          "relative bg-background transition-transform",
-          state === "idle" ? "duration-200" : "",
+          "relative bg-background",
+          state === "dragging"
+            ? "transition-none"
+            : "transition-transform duration-200",
           "group flex w-full cursor-pointer items-start gap-4 border-b px-4 py-4 text-left hover:bg-accent/50",
           isSelected && "bg-accent",
           selectionMode && selected && "bg-accent",
