@@ -354,6 +354,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
 
       if (selectionMode) {
         updateSelection(() => new Set());
+        setSelectionMode(false);
       }
     } catch (error) {
       console.error("Failed to mark all as read:", error);
@@ -373,6 +374,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
       await archiveItems.mutateAsync(ids);
       if (selectionMode) {
         updateSelection(() => new Set());
+        setSelectionMode(false);
       }
     } catch (error) {
       console.error("Failed to archive all:", error);
