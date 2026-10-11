@@ -20,11 +20,17 @@ setUnauthorizedCallback(() => {
   window.location.href = "/login";
 });
 
-const initialLocale = usePreferencesStore.getState().locale;
-document.documentElement.lang = initialLocale;
-void preloadLocaleMessages(initialLocale);
+function applyEinkMode(enabled: boolean): void {
+  document.documentElement.classList.toggle("eink", enabled);
+}
+
+const initialPreferences = usePreferencesStore.getState();
+document.documentElement.lang = initialPreferences.locale;
+applyEinkMode(initialPreferences.einkMode);
+void preloadLocaleMessages(initialPreferences.locale);
 usePreferencesStore.subscribe((state) => {
   document.documentElement.lang = state.locale;
+  applyEinkMode(state.einkMode);
   void preloadLocaleMessages(state.locale);
 });
 

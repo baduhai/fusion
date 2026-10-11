@@ -62,9 +62,11 @@ export interface PreferencesState {
   locale: AppLocale;
   articlePageSize: ArticlePageSize;
   autoMarkRead: boolean;
+  einkMode: boolean;
   setLocale: (locale: string) => void;
   setArticlePageSize: (size: number) => void;
   setAutoMarkRead: (enabled: boolean) => void;
+  setEinkMode: (enabled: boolean) => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -73,10 +75,12 @@ export const usePreferencesStore = create<PreferencesState>()(
       locale: defaultLocale,
       articlePageSize: defaultArticlePageSize,
       autoMarkRead: defaultAutoMarkRead,
+      einkMode: false,
       setLocale: (locale) => set({ locale: normalizeLocale(locale) }),
       setArticlePageSize: (size) =>
         set({ articlePageSize: normalizeArticlePageSize(size) }),
       setAutoMarkRead: (enabled) => set({ autoMarkRead: enabled }),
+      setEinkMode: (enabled) => set({ einkMode: enabled }),
     }),
     {
       name: "fusion-preferences",
@@ -85,6 +89,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         locale: state.locale,
         articlePageSize: state.articlePageSize,
         autoMarkRead: state.autoMarkRead,
+        einkMode: state.einkMode,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PreferencesState> | undefined;
@@ -96,6 +101,7 @@ export const usePreferencesStore = create<PreferencesState>()(
             persisted?.articlePageSize ?? currentState.articlePageSize,
           ),
           autoMarkRead: persisted?.autoMarkRead ?? currentState.autoMarkRead,
+          einkMode: persisted?.einkMode ?? currentState.einkMode,
         };
       },
     },
