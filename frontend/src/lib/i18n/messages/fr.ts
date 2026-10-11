@@ -56,6 +56,8 @@ export const frMessages: PartialMessages = {
   "settings.about.reportIssue": "Signaler un probleme",
   "settings.articlePageSize.description": "Nombre d'articles recuperes a chaque chargement",
   "settings.articlePageSize.label": "Articles par chargement",
+  "settings.eink.description": "Monochrome a fort contraste, sans animations, images en niveaux de gris",
+  "settings.eink.label": "Mode e-ink",
   "settings.installCancelled": "Installation annulee",
   "settings.language.description": "Selectionnez votre langue preferee",
   "settings.language.label": "Langue",

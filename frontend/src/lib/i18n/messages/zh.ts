@@ -56,6 +56,8 @@ export const zhMessages: PartialMessages = {
   "settings.about.reportIssue": "报告问题",
   "settings.articlePageSize.description": "每次加载的文章数量",
   "settings.articlePageSize.label": "每次加载文章数",
+  "settings.eink.description": "高对比度黑白显示，禁用动画，图片转为灰度",
+  "settings.eink.label": "墨水屏模式",
   "settings.installCancelled": "已取消安装",
   "settings.language.description": "选择你偏好的语言",
   "settings.language.label": "语言",

@@ -53,7 +53,7 @@ function AppearanceContent() {
   const { theme, setTheme } = useTheme();
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
-  const { locale, articlePageSize, autoMarkRead, setLocale, setArticlePageSize, setAutoMarkRead } =
+  const { locale, articlePageSize, autoMarkRead, einkMode, setLocale, setArticlePageSize, setAutoMarkRead, setEinkMode } =
     usePreferencesStore();
 
   return (
@@ -146,6 +146,17 @@ function AppearanceContent() {
             <SelectItem value="system">{t("settings.theme.system")}</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* E-ink mode */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium">{t("settings.eink.label")}</p>
+          <p className="text-[13px] text-muted-foreground">
+            {t("settings.eink.description")}
+          </p>
+        </div>
+        <Switch checked={einkMode} onCheckedChange={setEinkMode} />
       </div>
 
       {/* Keyboard shortcuts */}
