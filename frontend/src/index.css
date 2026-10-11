@@ -5,6 +5,7 @@
 @import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant eink (&:is(.eink *));
 
 :root {
   --background: oklch(1 0 0);
@@ -73,6 +74,80 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.6 0.12 250);
+}
+
+/*
+ * E-ink mode: a high-contrast, strictly monochrome palette layered on top of
+ * the active light/dark theme. Grays are used only where a selected/hover state
+ * must be distinguishable from the base color. Applied via the `.eink` class on
+ * <html> from the persisted preference.
+ */
+.eink {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #ededed;
+  --secondary-foreground: #000000;
+  --muted: #ededed;
+  --muted-foreground: #4d4d4d;
+  --accent: #d9d9d9;
+  --accent-foreground: #000000;
+  --destructive: #000000;
+  --border: #000000;
+  --input: #000000;
+  --ring: #000000;
+  --chart-1: #d9d9d9;
+  --chart-2: #b3b3b3;
+  --chart-3: #808080;
+  --chart-4: #4d4d4d;
+  --chart-5: #1a1a1a;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #000000;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d9d9d9;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #000000;
+  --sidebar-ring: #000000;
+}
+
+.eink.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #b3b3b3;
+  --accent: #333333;
+  --accent-foreground: #ffffff;
+  --destructive: #ffffff;
+  --border: #ffffff;
+  --input: #ffffff;
+  --ring: #ffffff;
+  --chart-1: #1a1a1a;
+  --chart-2: #4d4d4d;
+  --chart-3: #808080;
+  --chart-4: #b3b3b3;
+  --chart-5: #d9d9d9;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #333333;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #ffffff;
+  --sidebar-ring: #ffffff;
 }
 
 @theme inline {
@@ -180,4 +255,25 @@
     overflow-x: auto;
     max-width: 100%;
   }
+}
+
+/* E-ink mode: strip motion, depth and color that render poorly on e-paper. */
+.eink,
+.eink *,
+.eink *::before,
+.eink *::after {
+  animation: none !important;
+  transition: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.eink {
+  scroll-behavior: auto;
+}
+
+.eink img,
+.eink video {
+  filter: grayscale(1);
 }

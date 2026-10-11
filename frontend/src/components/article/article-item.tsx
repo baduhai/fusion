@@ -224,7 +224,7 @@ export function ArticleItem({
 
         {/* Article Actions */}
         {!selectionMode && (
-          <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex">
+          <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex eink:flex">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -252,7 +252,7 @@ export function ArticleItem({
             variant="ghost"
             size="icon-sm"
             onClick={handleToggleStar}
-            className={cn(isStarred ? "bg-amber-100 dark:bg-amber-950/40" : "bg-muted")}
+            className={cn(isStarred ? "bg-amber-100 dark:bg-amber-950/40 eink:bg-muted" : "bg-muted")}
             aria-label={
               isStarred ? t("article.action.unstar") : t("article.action.star")
             }
@@ -261,7 +261,7 @@ export function ArticleItem({
             <Star
               className={cn(
                 isStarred
-                  ? "fill-amber-500 text-amber-500"
+                  ? "fill-amber-500 text-amber-500 eink:fill-foreground eink:text-foreground"
                   : "text-muted-foreground",
               )}
             />

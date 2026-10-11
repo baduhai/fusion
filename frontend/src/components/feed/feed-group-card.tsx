@@ -143,7 +143,7 @@ export function FeedGroupCard({
             </span>
           </button>
         )}
-        <div className="flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover/header:opacity-100">
+        <div className="flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover/header:opacity-100 eink:opacity-100">
           <button
             type="button"
             onClick={(e) => {
