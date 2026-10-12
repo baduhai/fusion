@@ -166,7 +166,58 @@ TanStack file-based routes can infer parent-child nesting from file names. We in
 
 The `feeds_` prefix is a routing implementation detail to avoid accidental nesting under the management page route while preserving the final URL path as `/feeds/...`.
 
-## 13. Release verification checklist
+## 13. E-ink mode
+
+An optional, per-device display mode for e-paper readers. It is a persisted
+preference (`einkMode`) surfaced in `Settings > Appearance`, applied as an
+`.eink` class on `<html>` layered over the active light/dark theme, and it
+changes behavior as well as styling.
+
+Styling (`frontend/src/index.css`):
+
+- Monochrome palette: black-on-white (light) or white-on-black (dark), solid
+  grays for selected/hover states. No colored accents.
+- Animations, transitions, shadows and blur are disabled; smooth scrolling off.
+- Images keep their colors (the display handles color reduction).
+- Article images taller than a page are scaled to the page height.
+- Prose tables and `<pre>` drop their scroll containers (`overflow: visible`)
+  so tall email-style layouts and code blocks can fragment across pages.
+
+Paged reading:
+
+- **List**: a fixed number of fixed-height rows per screen
+  (`perPage = floor(listHeight / rowHeight)`, row height 108px) with a bottom
+  pager. Next prefetches one page ahead. Selection is scoped to the visible
+  page. The floating action bar sits above the pager.
+- **Article**: content is paginated with a CSS multi-column layout
+  (`usePaginatedContent`) — the browser breaks between lines, so a page never
+  clips text. Pages are reached by translating the column track. Left/right
+  screen thirds turn the page; paging stops at the last page.
+- **Keys**: `PageUp`/`PageDown`/`Space` are captured (in `use-keyboard.ts`) and
+  dispatched through a small paging coordinator (`store/eink-paging.ts`) rather
+  than relying on native scroll or DOM focus. The active surface registers
+  `next`/`prev`; the article drawer takes over from the list while open.
+- **Auto mark read**: fires when the reader reaches an article's last page.
+- **Text size**: a `einkTextScale` preference (100–150%) scales the reader
+  typography via a CSS variable and re-paginates.
+
+Key files:
+
+- `frontend/src/store/eink-paging.ts`: paging coordinator
+- `frontend/src/hooks/use-eink-paging.ts`: surface registration
+- `frontend/src/hooks/use-element-size.ts`: ResizeObserver size hook
+- `frontend/src/hooks/use-paginated-content.ts`: multi-column pagination
+- `frontend/src/components/article/eink/eink-pager.tsx`: list pager
+- `frontend/src/components/article/eink/eink-article-view.tsx`: paged reader
+
+Known constraints:
+
+- A scroll container cannot be split across columns; e-ink mode removes the
+  prose ones, but a very large atomic element could still overflow a page.
+- Paginating a very long article lays out all columns at once; measure cost
+  grows with length.
+
+## 14. Release verification checklist
 
 - Type check: `cd frontend && npx tsc -b --noEmit`
 - Lint: `cd frontend && pnpm lint`

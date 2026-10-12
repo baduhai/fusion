@@ -12,6 +12,7 @@
 - Feed management: RSS/Atom parsing, feed auto-discovery, and group organization
 - Fever API compatibility for third-party clients (Reeder, Unread, FeedMe, etc.)
 - Responsive web UI with PWA support
+- E-ink mode: high-contrast monochrome with paged reading for e-readers
 - Self-hosting friendly: single binary or Docker deployment
 - Built-in i18n: English, Chinese, German, French, Spanish, Russian, Portuguese, Swedish
 - No AI features by design: focused, distraction-free RSS reading
