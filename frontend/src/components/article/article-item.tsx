@@ -224,7 +224,7 @@ export function ArticleItem({
 
         {/* Article Actions */}
         {!selectionMode && (
-          <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex eink:flex">
+          <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex eink:md:flex">
           <Button
             variant="ghost"
             size="icon-sm"
