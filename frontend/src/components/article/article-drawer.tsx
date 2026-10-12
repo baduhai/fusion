@@ -39,6 +39,7 @@ import { processArticleContent } from "@/lib/content";
 import { getFaviconUrl } from "@/lib/api/favicon";
 import { FeedFavicon } from "@/components/feed/feed-favicon";
 import { toSafeExternalUrl } from "@/lib/safe-url";
+import { EinkArticleView } from "./eink/eink-article-view";
 
 const standaloneFeedLink = "fusion://standalone";
 
@@ -107,10 +108,18 @@ export function ArticleDrawer() {
   const safeArticleLink = article ? toSafeExternalUrl(article.link) : null;
 
   const autoMarkRead = usePreferencesStore((s) => s.autoMarkRead);
+  const einkMode = usePreferencesStore((s) => s.einkMode);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLElement>(null);
   const autoMarkedRef = useRef<number | null>(null);
   const addedToInboxRef = useRef<number | null>(null);
+
+  // Reset per-article bookkeeping when the open article changes. Declared
+  // before the auto-mark effect so the refs are clear when it runs.
+  useEffect(() => {
+    autoMarkedRef.current = null;
+    addedToInboxRef.current = null;
+  }, [article?.id]);
 
   useEffect(() => {
     if (!article || !article.unread || !autoMarkRead || !canToggleRead) {
@@ -147,15 +156,9 @@ export function ArticleDrawer() {
     };
   }, [article, article?.id, autoMarkRead, canToggleRead, markRead]);
 
-  const prevArticleIdRef = useRef<number | null>(null);
-  if (article?.id !== prevArticleIdRef.current) {
-    prevArticleIdRef.current = article?.id ?? null;
-    autoMarkedRef.current = null;
-    addedToInboxRef.current = null;
-  }
-
   // Focus the article so the browser natively routes PageUp/PageDown (and
   // Space/Home/End) to the surrounding scroll viewport. Reset scroll on change.
+  // In e-ink mode pagination owns the keys, so this is a no-op there.
   const activeArticleId = article?.id ?? null;
   useEffect(() => {
     if (activeArticleId === null) {
@@ -253,6 +256,77 @@ export function ArticleDrawer() {
       },
       onOpenOriginal: handleOpenOriginal,
     });
+
+  // In e-ink mode, reaching the last page marks the article read (there is no
+  // scroll-bottom to observe).
+  const handlePageChange = (page: number, pageCount: number) => {
+    if (!einkMode || !autoMarkRead || !article || !canToggleRead) {
+      return;
+    }
+    if (page < pageCount - 1 || autoMarkedRef.current === article.id) {
+      return;
+    }
+    autoMarkedRef.current = article.id;
+    markRead.mutateAsync([article.id]).catch(() => {});
+  };
+
+  const articleBody = article ? (
+    <>
+      <div className="space-y-3">
+        <h1 className="text-[28px] font-bold leading-[1.3]">
+          {article.title}
+        </h1>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          {article.feed_id > 0 ? (
+            <button
+              type="button"
+              onClick={handleOpenFeed}
+              className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent"
+            >
+              {feed && (
+                <FeedFavicon
+                  src={getFaviconUrl(feed.link, feed.site_url)}
+                  className="h-3.5 w-3.5 rounded-sm"
+                />
+              )}
+              <span className="truncate hover:underline">
+                {feed?.name ?? bookmark?.feed_name ?? t("common.unknown")}
+              </span>
+            </button>
+          ) : (
+            <span className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+              <span className="truncate">
+                {bookmark?.feed_name ?? t("common.unknown")}
+              </span>
+            </span>
+          )}
+          <span className="text-muted-foreground">
+            {formatDate(article.pub_date)}
+          </span>
+          {safeArticleLink ? (
+            <a
+              href={safeArticleLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate text-primary hover:underline"
+            >
+              {getLinkDomain(safeArticleLink)}
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      <div
+        className="prose prose-neutral mt-6 min-w-0 max-w-none break-words dark:prose-invert"
+        dangerouslySetInnerHTML={{
+          __html: processArticleContent(
+            article.full_content || article.content,
+            safeArticleLink ?? undefined,
+          ),
+        }}
+      />
+    </>
+  ) : null;
 
   return (
     <Sheet open={selectedArticleId !== null} onOpenChange={handleOpenChange}>
@@ -381,67 +455,25 @@ export function ArticleDrawer() {
             </div>
 
             {/* Content */}
-            <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1">
-              <article
-                ref={articleRef}
-                tabIndex={-1}
-                className="min-w-0 px-5 py-6 outline-none sm:px-12 sm:py-8"
+            {einkMode ? (
+              <EinkArticleView
+                key={article.id}
+                remeasureKey={(article.full_content || article.content).length}
+                onPageChange={handlePageChange}
               >
-                <div className="space-y-3">
-                  <h1 className="text-[28px] font-bold leading-[1.3]">
-                    {article.title}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                    {article.feed_id > 0 ? (
-                      <button
-                        type="button"
-                        onClick={handleOpenFeed}
-                        className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent"
-                      >
-                        {feed && (
-                          <FeedFavicon
-                            src={getFaviconUrl(feed.link, feed.site_url)}
-                            className="h-3.5 w-3.5 rounded-sm"
-                          />
-                        )}
-                        <span className="truncate hover:underline">
-                          {feed?.name ?? bookmark?.feed_name ?? t("common.unknown")}
-                        </span>
-                      </button>
-                    ) : (
-                      <span className="flex max-w-48 items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                        <span className="truncate">
-                          {bookmark?.feed_name ?? t("common.unknown")}
-                        </span>
-                      </span>
-                    )}
-                    <span className="text-muted-foreground">
-                      {formatDate(article.pub_date)}
-                    </span>
-                    {safeArticleLink ? (
-                      <a
-                        href={safeArticleLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="truncate text-primary hover:underline"
-                      >
-                        {getLinkDomain(safeArticleLink)}
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div
-                  className="prose prose-neutral mt-6 min-w-0 max-w-none break-words dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: processArticleContent(
-                      article.full_content || article.content,
-                      safeArticleLink ?? undefined,
-                    ),
-                  }}
-                />
-              </article>
-            </ScrollArea>
+                {articleBody}
+              </EinkArticleView>
+            ) : (
+              <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1">
+                <article
+                  ref={articleRef}
+                  tabIndex={-1}
+                  className="min-w-0 px-5 py-6 outline-none sm:px-12 sm:py-8"
+                >
+                  {articleBody}
+                </article>
+              </ScrollArea>
+            )}
 
             {/* Footer - Navigation */}
             <div className="flex items-center justify-between border-t px-4 py-3 sm:px-6">
