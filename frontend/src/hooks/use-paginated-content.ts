@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from "
 import { useElementSize } from "@/hooks/use-element-size";
 
 export interface PaginatedContent {
-  outerRef: RefObject<HTMLDivElement | null>;
+  outerRef: (node: HTMLDivElement | null) => void;
   innerRef: RefObject<HTMLDivElement | null>;
   page: number;
   pageCount: number;
