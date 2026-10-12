@@ -56,7 +56,7 @@ export const ruMessages: PartialMessages = {
   "settings.about.reportIssue": "Сообщить о проблеме",
   "settings.articlePageSize.description": "Количество статей, загружаемых за один раз",
   "settings.articlePageSize.label": "Статей за загрузку",
-  "settings.eink.description": "Высококонтрастный монохромный режим без анимации, изображения в оттенках серого",
+  "settings.eink.description": "Высококонтрастный монохромный режим без анимации",
   "settings.eink.label": "Режим E-ink",
   "settings.installCancelled": "Установка отменена",
   "settings.language.description": "Выберите предпочтительный язык",

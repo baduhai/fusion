@@ -272,8 +272,3 @@
 .eink {
   scroll-behavior: auto;
 }
-
-.eink img,
-.eink video {
-  filter: grayscale(1);
-}

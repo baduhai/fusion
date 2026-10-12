@@ -56,7 +56,7 @@ export const enMessages = {
   "settings.autoMarkRead.label": "Auto mark as read",
   "settings.articlePageSize.description": "Number of articles fetched each time",
   "settings.articlePageSize.label": "Articles per load",
-  "settings.eink.description": "High-contrast monochrome, no animations, grayscale images",
+  "settings.eink.description": "High-contrast monochrome, no animations",
   "settings.eink.label": "E-ink mode",
   "settings.installCancelled": "Installation cancelled",
   "settings.language.description": "Select your preferred language",

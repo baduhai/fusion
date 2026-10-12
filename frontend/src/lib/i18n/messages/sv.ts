@@ -56,7 +56,7 @@ export const svMessages: PartialMessages = {
   "settings.about.reportIssue": "Rapportera problem",
   "settings.articlePageSize.description": "Antal artiklar som hamtas varje gang",
   "settings.articlePageSize.label": "Artiklar per laddning",
-  "settings.eink.description": "Hogkontrastig monokrom, inga animationer, bilder i graskala",
+  "settings.eink.description": "Hogkontrastig monokrom, inga animationer",
   "settings.eink.label": "E-ink-lage",
   "settings.installCancelled": "Installationen avbrots",
   "settings.language.description": "Valj ditt foredragna sprak",
