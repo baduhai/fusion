@@ -16,8 +16,12 @@ export type AppLocale = (typeof supportedLocales)[number];
 export const articlePageSizeOptions = [10, 20, 30, 50, 100] as const;
 export type ArticlePageSize = (typeof articlePageSizeOptions)[number];
 
+export const einkTextScaleOptions = [1, 1.15, 1.3, 1.5] as const;
+export type EinkTextScale = (typeof einkTextScaleOptions)[number];
+
 const localeSet = new Set<AppLocale>(supportedLocales);
 const articlePageSizeSet = new Set<number>(articlePageSizeOptions);
+const einkTextScaleSet = new Set<number>(einkTextScaleOptions);
 
 function resolveSupportedLocale(locale: string): AppLocale | null {
   const normalized = locale.toLowerCase().replace("_", "-");
@@ -58,15 +62,25 @@ function normalizeArticlePageSize(size: number): ArticlePageSize {
   return defaultArticlePageSize;
 }
 
+function normalizeEinkTextScale(scale: number): EinkTextScale {
+  if (einkTextScaleSet.has(scale)) {
+    return scale as EinkTextScale;
+  }
+
+  return 1;
+}
+
 export interface PreferencesState {
   locale: AppLocale;
   articlePageSize: ArticlePageSize;
   autoMarkRead: boolean;
   einkMode: boolean;
+  einkTextScale: EinkTextScale;
   setLocale: (locale: string) => void;
   setArticlePageSize: (size: number) => void;
   setAutoMarkRead: (enabled: boolean) => void;
   setEinkMode: (enabled: boolean) => void;
+  setEinkTextScale: (scale: number) => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -76,11 +90,14 @@ export const usePreferencesStore = create<PreferencesState>()(
       articlePageSize: defaultArticlePageSize,
       autoMarkRead: defaultAutoMarkRead,
       einkMode: false,
+      einkTextScale: 1,
       setLocale: (locale) => set({ locale: normalizeLocale(locale) }),
       setArticlePageSize: (size) =>
         set({ articlePageSize: normalizeArticlePageSize(size) }),
       setAutoMarkRead: (enabled) => set({ autoMarkRead: enabled }),
       setEinkMode: (enabled) => set({ einkMode: enabled }),
+      setEinkTextScale: (scale) =>
+        set({ einkTextScale: normalizeEinkTextScale(scale) }),
     }),
     {
       name: "fusion-preferences",
@@ -90,6 +107,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         articlePageSize: state.articlePageSize,
         autoMarkRead: state.autoMarkRead,
         einkMode: state.einkMode,
+        einkTextScale: state.einkTextScale,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PreferencesState> | undefined;
@@ -102,6 +120,9 @@ export const usePreferencesStore = create<PreferencesState>()(
           ),
           autoMarkRead: persisted?.autoMarkRead ?? currentState.autoMarkRead,
           einkMode: persisted?.einkMode ?? currentState.einkMode,
+          einkTextScale: normalizeEinkTextScale(
+            persisted?.einkTextScale ?? currentState.einkTextScale,
+          ),
         };
       },
     },

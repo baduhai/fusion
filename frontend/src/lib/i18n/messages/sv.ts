@@ -58,6 +58,8 @@ export const svMessages: PartialMessages = {
   "settings.articlePageSize.label": "Artiklar per laddning",
   "settings.eink.description": "Hogkontrastig monokrom, inga animationer",
   "settings.eink.label": "E-ink-lage",
+  "settings.einkTextSize.description": "Lastextstorlek for e-ink-lage",
+  "settings.einkTextSize.label": "Textstorlek",
   "settings.installCancelled": "Installationen avbrots",
   "settings.language.description": "Valj ditt foredragna sprak",
   "settings.language.label": "Sprak",

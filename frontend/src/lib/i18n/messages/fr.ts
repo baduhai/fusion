@@ -58,6 +58,8 @@ export const frMessages: PartialMessages = {
   "settings.articlePageSize.label": "Articles par chargement",
   "settings.eink.description": "Monochrome a fort contraste, sans animations",
   "settings.eink.label": "Mode e-ink",
+  "settings.einkTextSize.description": "Taille du texte de lecture en mode e-ink",
+  "settings.einkTextSize.label": "Taille du texte",
   "settings.installCancelled": "Installation annulee",
   "settings.language.description": "Selectionnez votre langue preferee",
   "settings.language.label": "Langue",

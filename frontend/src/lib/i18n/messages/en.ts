@@ -58,6 +58,8 @@ export const enMessages = {
   "settings.articlePageSize.label": "Articles per load",
   "settings.eink.description": "High-contrast monochrome, no animations",
   "settings.eink.label": "E-ink mode",
+  "settings.einkTextSize.description": "Reading text size for e-ink mode",
+  "settings.einkTextSize.label": "Text size",
   "settings.installCancelled": "Installation cancelled",
   "settings.language.description": "Select your preferred language",
   "settings.language.label": "Language",

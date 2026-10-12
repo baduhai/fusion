@@ -287,3 +287,14 @@
 .eink .prose pre {
   overflow: visible;
 }
+
+.eink .prose table {
+  max-width: 100%;
+}
+
+/* Reading text size for e-ink, driven by the text-scale preference. The
+   typography plugin sizes prose (and its headings) in em, so scaling the
+   container scales everything. */
+.eink .prose {
+  font-size: calc(1rem * var(--eink-font-scale, 1));
+}

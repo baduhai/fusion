@@ -24,13 +24,19 @@ function applyEinkMode(enabled: boolean): void {
   document.documentElement.classList.toggle("eink", enabled);
 }
 
+function applyEinkTextScale(scale: number): void {
+  document.documentElement.style.setProperty("--eink-font-scale", String(scale));
+}
+
 const initialPreferences = usePreferencesStore.getState();
 document.documentElement.lang = initialPreferences.locale;
 applyEinkMode(initialPreferences.einkMode);
+applyEinkTextScale(initialPreferences.einkTextScale);
 void preloadLocaleMessages(initialPreferences.locale);
 usePreferencesStore.subscribe((state) => {
   document.documentElement.lang = state.locale;
   applyEinkMode(state.einkMode);
+  applyEinkTextScale(state.einkTextScale);
   void preloadLocaleMessages(state.locale);
 });
 

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import {
   articlePageSizeOptions,
+  einkTextScaleOptions,
   supportedLocales,
   usePreferencesStore,
   useUIStore,
@@ -53,7 +54,7 @@ function AppearanceContent() {
   const { theme, setTheme } = useTheme();
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
-  const { locale, articlePageSize, autoMarkRead, einkMode, setLocale, setArticlePageSize, setAutoMarkRead, setEinkMode } =
+  const { locale, articlePageSize, autoMarkRead, einkMode, einkTextScale, setLocale, setArticlePageSize, setAutoMarkRead, setEinkMode, setEinkTextScale } =
     usePreferencesStore();
 
   return (
@@ -158,6 +159,38 @@ function AppearanceContent() {
         </div>
         <Switch checked={einkMode} onCheckedChange={setEinkMode} />
       </div>
+
+      {/* E-ink text size (only meaningful while e-ink mode is on) */}
+      {einkMode && (
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">{t("settings.einkTextSize.label")}</p>
+            <p className="text-[13px] text-muted-foreground">
+              {t("settings.einkTextSize.description")}
+            </p>
+          </div>
+          <Select
+            value={String(einkTextScale)}
+            onValueChange={(value) => {
+              const parsed = Number.parseFloat(value);
+              if (!Number.isNaN(parsed)) {
+                setEinkTextScale(parsed);
+              }
+            }}
+          >
+            <SelectTrigger className="w-auto gap-2 border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {einkTextScaleOptions.map((scale) => (
+                <SelectItem key={scale} value={String(scale)}>
+                  {Math.round(scale * 100)}%
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Keyboard shortcuts */}
       <div className="flex items-center justify-between">

@@ -58,6 +58,8 @@ export const ruMessages: PartialMessages = {
   "settings.articlePageSize.label": "Статей за загрузку",
   "settings.eink.description": "Высококонтрастный монохромный режим без анимации",
   "settings.eink.label": "Режим E-ink",
+  "settings.einkTextSize.description": "Размер текста для режима E-ink",
+  "settings.einkTextSize.label": "Размер текста",
   "settings.installCancelled": "Установка отменена",
   "settings.language.description": "Выберите предпочтительный язык",
   "settings.language.label": "Язык",

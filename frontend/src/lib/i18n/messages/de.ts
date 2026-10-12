@@ -58,6 +58,8 @@ export const deMessages: PartialMessages = {
   "settings.articlePageSize.label": "Artikel pro Laden",
   "settings.eink.description": "Kontrastreiches Schwarz-Weiss, keine Animationen",
   "settings.eink.label": "E-Ink-Modus",
+  "settings.einkTextSize.description": "Lesetextgrosse fur den E-Ink-Modus",
+  "settings.einkTextSize.label": "Textgrosse",
   "settings.installCancelled": "Installation abgebrochen",
   "settings.language.description": "Bevorzugte Sprache auswahlen",
   "settings.language.label": "Sprache",

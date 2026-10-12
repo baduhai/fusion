@@ -58,6 +58,8 @@ export const esMessages: PartialMessages = {
   "settings.articlePageSize.label": "Articulos por carga",
   "settings.eink.description": "Monocromo de alto contraste, sin animaciones",
   "settings.eink.label": "Modo e-ink",
+  "settings.einkTextSize.description": "Tamano del texto de lectura en modo e-ink",
+  "settings.einkTextSize.label": "Tamano de texto",
   "settings.installCancelled": "Instalacion cancelada",
   "settings.language.description": "Selecciona tu idioma preferido",
   "settings.language.label": "Idioma",

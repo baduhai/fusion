@@ -107,6 +107,7 @@ export function ArticleDrawer() {
 
   const autoMarkRead = usePreferencesStore((s) => s.autoMarkRead);
   const einkMode = usePreferencesStore((s) => s.einkMode);
+  const einkTextScale = usePreferencesStore((s) => s.einkTextScale);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLElement>(null);
   const autoMarkedRef = useRef<number | null>(null);
@@ -455,7 +456,7 @@ export function ArticleDrawer() {
             {einkMode ? (
               <EinkArticleView
                 key={article.id}
-                remeasureKey={(article.full_content || article.content).length}
+                remeasureKey={`${(article.full_content || article.content).length}:${einkTextScale}`}
                 onPageChange={handlePageChange}
               >
                 {articleBody}
