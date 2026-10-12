@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useUIStore } from "@/store";
+import { usePreferencesStore, useUIStore } from "@/store";
+import { useEinkPagingStore } from "@/store/eink-paging";
 import { useUrlState } from "./use-url-state";
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -157,6 +158,30 @@ export function useKeyboardShortcuts() {
 
       if (state.isSearchOpen || state.isSettingsOpen || state.isShortcutsOpen) {
         return;
+      }
+
+      // E-ink mode: capture page keys to turn pages instead of scrolling, so
+      // paging does not depend on DOM focus or native scroll routing.
+      if (usePreferencesStore.getState().einkMode) {
+        const isSpace = event.key === " ";
+        if (event.key === "PageDown" || event.key === "PageUp" || isSpace) {
+          const target = event.target;
+          const onControl =
+            target instanceof HTMLElement &&
+            target.closest('a, button, [role="button"]') !== null;
+          // Let Space activate a focused control; PageUp/PageDown always page.
+          if (!(isSpace && onControl)) {
+            event.preventDefault();
+            const paging = useEinkPagingStore.getState();
+            if (event.key === "PageUp" || (isSpace && event.shiftKey)) {
+              paging.goPrev();
+            } else {
+              paging.goNext();
+            }
+            resetPrefix();
+            return;
+          }
+        }
       }
 
       if (pendingPrefixRef.current === "g") {
