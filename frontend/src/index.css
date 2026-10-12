@@ -279,3 +279,11 @@
   max-height: var(--eink-page-height, none);
   width: auto;
 }
+
+/* A scroll container cannot be split across columns, so tall tables/code
+   blocks (e.g. email-style newsletter layouts) would overflow and clip.
+   Let them fragment instead. */
+.eink .prose table,
+.eink .prose pre {
+  overflow: visible;
+}
