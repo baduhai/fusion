@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   Circle,
   CircleCheck,
-  ChevronLeft,
-  ChevronRight,
   ExternalLink,
   FileText,
   Inbox,
@@ -245,17 +243,16 @@ export function ArticleDrawer() {
     }
   };
 
-  const { goToNext, goToPrevious, hasNext, hasPrevious } =
-    useArticleNavigation(articleIds, {
-      enabled: selectedArticleId !== null,
-      onToggleRead: () => {
-        void handleToggleRead();
-      },
-      onToggleStar: () => {
-        void handleToggleStar();
-      },
-      onOpenOriginal: handleOpenOriginal,
-    });
+  useArticleNavigation(articleIds, {
+    enabled: selectedArticleId !== null,
+    onToggleRead: () => {
+      void handleToggleRead();
+    },
+    onToggleStar: () => {
+      void handleToggleStar();
+    },
+    onOpenOriginal: handleOpenOriginal,
+  });
 
   // In e-ink mode, reaching the last page marks the article read (there is no
   // scroll-bottom to observe).
@@ -474,30 +471,6 @@ export function ArticleDrawer() {
                 </article>
               </ScrollArea>
             )}
-
-            {/* Footer - Navigation */}
-            <div className="flex items-center justify-between border-t px-4 py-3 sm:px-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPrevious}
-                disabled={!hasPrevious()}
-                className="h-auto gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                {t("common.previous")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNext}
-                disabled={!hasNext()}
-                className="h-auto gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground"
-              >
-                {t("common.next")}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         )}
       </SheetContent>
