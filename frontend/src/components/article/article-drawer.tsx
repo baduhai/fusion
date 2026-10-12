@@ -214,10 +214,26 @@ export function ArticleDrawer() {
 
   const handleFetchContent = async () => {
     if (!article) return;
+    const wasRead = !article.unread;
     try {
       await fetchContent.mutateAsync(article.id);
     } catch (error) {
       console.error("Failed to fetch content:", error);
+      return;
+    }
+
+    // The feed only provided a truncated body. Reset the reading position and
+    // treat the article as unread so the full version must be read to its end
+    // before it is auto-marked read again.
+    const viewport = scrollAreaRef.current?.querySelector<HTMLDivElement>(
+      '[data-slot="scroll-area-viewport"]',
+    );
+    if (viewport) {
+      viewport.scrollTop = 0;
+    }
+    autoMarkedRef.current = null;
+    if (wasRead) {
+      markUnread.mutateAsync([article.id]).catch(() => {});
     }
   };
 
@@ -455,7 +471,7 @@ export function ArticleDrawer() {
             {/* Content */}
             {einkMode ? (
               <EinkArticleView
-                key={article.id}
+                key={`${article.id}:${(article.full_content || article.content).length}`}
                 remeasureKey={`${(article.full_content || article.content).length}:${einkTextScale}`}
                 onPageChange={handlePageChange}
               >

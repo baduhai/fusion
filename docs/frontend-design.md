@@ -197,7 +197,11 @@ Paged reading:
   dispatched through a small paging coordinator (`store/eink-paging.ts`) rather
   than relying on native scroll or DOM focus. The active surface registers
   `next`/`prev`; the article drawer takes over from the list while open.
-- **Auto mark read**: fires when the reader reaches an article's last page.
+- **Auto mark read**: fires only once pagination has been measured and the
+  reader reaches an article's last page (a one-page article counts as reaching
+  it on open). Fetching full content for a truncated article flips it back to
+  unread and re-arms the trigger, so the full version must again be read to its
+  end.
 - **Text size**: a `einkTextScale` preference (100–150%) scales the reader
   typography via a CSS variable and re-paginates.
 
