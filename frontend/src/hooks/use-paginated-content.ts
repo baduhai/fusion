@@ -36,7 +36,9 @@ export function usePaginatedContent(remeasureKey?: unknown): PaginatedContent {
     if (!inner || size.width === 0) {
       return;
     }
-    // scrollWidth spans every column: N * columnWidth + (N - 1) * gap.
+    // Constrain images to one page so they cannot overflow a column, then
+    // measure. scrollWidth spans every column: N * columnWidth + (N - 1) * gap.
+    inner.style.setProperty("--eink-page-height", `${inner.clientHeight}px`);
     const count = Math.max(1, Math.round((inner.scrollWidth + gap) / stride));
     setPageCount(count);
     setPage((current) => Math.min(current, count - 1));

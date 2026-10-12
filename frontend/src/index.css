@@ -272,3 +272,10 @@
 .eink {
   scroll-behavior: auto;
 }
+
+/* Keep images within a single e-ink page so a tall image is scaled to fit
+   instead of being clipped by the paged column viewport. */
+.eink .prose img {
+  max-height: var(--eink-page-height, none);
+  width: auto;
+}
