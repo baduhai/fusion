@@ -6,6 +6,7 @@ export interface PaginatedContent {
   innerRef: RefObject<HTMLDivElement | null>;
   page: number;
   pageCount: number;
+  measured: boolean;
   next: () => void;
   prev: () => void;
   columnWidth: number;
@@ -24,6 +25,7 @@ export function usePaginatedContent(remeasureKey?: unknown): PaginatedContent {
   const innerRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
+  const [measured, setMeasured] = useState(false);
 
   // Match the article body's horizontal padding: px-5 on mobile, sm:px-12.
   const margin = size.width >= 640 ? 48 : 20;
@@ -42,6 +44,7 @@ export function usePaginatedContent(remeasureKey?: unknown): PaginatedContent {
     const count = Math.max(1, Math.round((inner.scrollWidth + gap) / stride));
     setPageCount(count);
     setPage((current) => Math.min(current, count - 1));
+    setMeasured(true);
   }, [gap, stride, size.width]);
 
   useLayoutEffect(() => {
@@ -90,5 +93,5 @@ export function usePaginatedContent(remeasureKey?: unknown): PaginatedContent {
     [],
   );
 
-  return { outerRef, innerRef, page, pageCount, next, prev, columnWidth, gap, margin, stride };
+  return { outerRef, innerRef, page, pageCount, measured, next, prev, columnWidth, gap, margin, stride };
 }

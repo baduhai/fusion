@@ -20,6 +20,7 @@ export function EinkArticleView({
     innerRef,
     page,
     pageCount,
+    measured,
     next,
     prev,
     columnWidth,
@@ -35,8 +36,11 @@ export function EinkArticleView({
     onPageChangeRef.current = onPageChange;
   }, [onPageChange]);
   useEffect(() => {
+    // Skip the initial (0 / 1) report that fires before pagination is measured,
+    // otherwise every article would be treated as ending on its first page.
+    if (!measured) return;
     onPageChangeRef.current?.(page, pageCount);
-  }, [page, pageCount]);
+  }, [measured, page, pageCount]);
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target;

@@ -258,7 +258,7 @@ export function ArticleDrawer() {
   // In e-ink mode, reaching the last page marks the article read (there is no
   // scroll-bottom to observe).
   const handlePageChange = (page: number, pageCount: number) => {
-    if (!einkMode || !autoMarkRead || !article || !canToggleRead) {
+    if (!einkMode || !autoMarkRead || !article || !article.unread || !canToggleRead) {
       return;
     }
     if (page < pageCount - 1 || autoMarkedRef.current === article.id) {
