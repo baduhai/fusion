@@ -86,22 +86,18 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const selectedIds =
     selection.context === selectionContext ? selection.ids : EMPTY_SELECTION;
 
-  // E-ink list page: reset when the reading context changes (adjusting state
-  // during render instead of an effect avoids an extra render pass).
-  const [pageState, setPageState] = useState({ context: selectionContext, page: 0 });
-  if (pageState.context !== selectionContext) {
-    setPageState({ context: selectionContext, page: 0 });
-  }
+  // E-ink list pagination is anchored to the first article on the page rather
+  // than a fixed page index, so items that get marked read/removed (for
+  // example after opening an article) don't shift the page under the reader.
+  const [pageState, setPageState] = useState<{
+    context: string;
+    anchorId: number | null;
+    fallbackIndex: number;
+  }>({ context: selectionContext, anchorId: null, fallbackIndex: 0 });
 
-  const setListPage = useCallback(
-    (updater: number | ((current: number) => number)) => {
-      setPageState((current) => ({
-        ...current,
-        page: typeof updater === "function" ? updater(current.page) : updater,
-      }));
-    },
-    [],
-  );
+  if (pageState.context !== selectionContext) {
+    setPageState({ context: selectionContext, anchorId: null, fallbackIndex: 0 });
+  }
 
   const updateSelection = useCallback(
     (updater: (prev: Set<number>) => Set<number>) => {
@@ -174,35 +170,56 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const perPage = einkMode
     ? Math.max(1, Math.floor(listAreaSize.height / EINK_ROW_HEIGHT))
     : Number.POSITIVE_INFINITY;
+  const finitePerPage = Number.isFinite(perPage)
+    ? perPage
+    : Math.max(1, displayArticles.length);
+
+  const setPageByIndex = useCallback(
+    (targetIndex: number) => {
+      const index = Math.max(0, targetIndex);
+      setPageState((current) => ({
+        ...current,
+        anchorId: displayArticles[index]?.id ?? null,
+        fallbackIndex: index,
+      }));
+    },
+    [displayArticles],
+  );
 
   const totalCount = isStarredMode
     ? displayArticles.length
     : (itemsQuery.data?.pages[0]?.total ?? displayArticles.length);
 
   const totalPages = einkMode
-    ? Math.max(1, Math.ceil(totalCount / perPage))
+    ? Math.max(1, Math.ceil(totalCount / finitePerPage))
     : 1;
 
-  const listPage = Math.min(pageState.page, Math.max(0, totalPages - 1));
+  // Resolve the current page start from the anchor id (falling back to the
+  // last known index if the anchor article is gone).
+  const anchorIndex =
+    pageState.anchorId !== null
+      ? displayArticles.findIndex((article) => article.id === pageState.anchorId)
+      : -1;
+  const startIndex = einkMode
+    ? Math.max(0, anchorIndex >= 0 ? anchorIndex : pageState.fallbackIndex)
+    : 0;
+  const listPage = Math.floor(startIndex / finitePerPage);
+  const nextStart = startIndex + finitePerPage;
 
   const pageItems = useMemo(
     () =>
       einkMode
-        ? displayArticles.slice(
-            listPage * perPage,
-            listPage * perPage + perPage,
-          )
+        ? displayArticles.slice(startIndex, startIndex + finitePerPage)
         : displayArticles,
-    [einkMode, displayArticles, listPage, perPage],
+    [einkMode, displayArticles, startIndex, finitePerPage],
   );
 
-  const canPrev = einkMode && listPage > 0;
-  const nextPageLoaded =
-    Number.isFinite(perPage) && displayArticles.length > (listPage + 1) * perPage;
+  const canPrev = einkMode && startIndex > 0;
+  const nextLoaded = displayArticles.length > nextStart;
   const canNext =
     einkMode &&
-    listPage + 1 < totalPages &&
-    (nextPageLoaded || !itemsQuery.hasNextPage);
+    nextStart < totalCount &&
+    (nextLoaded || !itemsQuery.hasNextPage);
 
   const selectionScope = einkMode ? pageItems : displayArticles;
 
@@ -248,7 +265,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     if (!einkMode || isStarredMode) {
       return;
     }
-    const needed = (listPage + 2) * perPage;
+    const needed = startIndex + 2 * finitePerPage;
     if (
       displayArticles.length < needed &&
       itemsQuery.hasNextPage &&
@@ -259,8 +276,8 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   }, [
     einkMode,
     isStarredMode,
-    listPage,
-    perPage,
+    startIndex,
+    finitePerPage,
     displayArticles.length,
     itemsQuery.hasNextPage,
     itemsQuery.isFetchingNextPage,
@@ -270,8 +287,16 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   // PageUp/PageDown turn list pages while no article is open.
   useEinkPaging({
     enabled: einkMode && selectedArticleId === null,
-    next: () => setListPage((current) => Math.min(current + 1, totalPages - 1)),
-    prev: () => setListPage((current) => Math.max(current - 1, 0)),
+    next: () => {
+      if (canNext) {
+        setPageByIndex(nextStart);
+      }
+    },
+    prev: () => {
+      if (canPrev) {
+        setPageByIndex(Math.max(0, startIndex - finitePerPage));
+      }
+    },
   });
 
   // Determine title
@@ -750,10 +775,16 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
           totalPages={totalPages}
           canPrev={canPrev}
           canNext={canNext}
-          onPrev={() => setListPage((current) => Math.max(current - 1, 0))}
-          onNext={() =>
-            setListPage((current) => Math.min(current + 1, totalPages - 1))
-          }
+          onPrev={() => {
+            if (canPrev) {
+              setPageByIndex(Math.max(0, startIndex - finitePerPage));
+            }
+          }}
+          onNext={() => {
+            if (canNext) {
+              setPageByIndex(nextStart);
+            }
+          }}
         />
       )}
       <FloatingActionBar

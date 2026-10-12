@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
-import { useUIStore } from "@/store";
+import { usePreferencesStore, useUIStore } from "@/store";
 
 interface ShortcutItem {
   keys: string;
@@ -16,6 +16,7 @@ export function ShortcutsDialog() {
   const { t } = useI18n();
   const isShortcutsOpen = useUIStore((s) => s.isShortcutsOpen);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
+  const einkMode = usePreferencesStore((s) => s.einkMode);
 
   const sections: ShortcutSection[] = [
     {
@@ -54,6 +55,19 @@ export function ShortcutsDialog() {
       ],
     },
   ];
+
+  if (einkMode) {
+    sections.push({
+      title: t("shortcuts.section.eink"),
+      items: [
+        { keys: "PageDown / Space", action: t("shortcuts.action.nextPage") },
+        {
+          keys: "PageUp / Shift+Space",
+          action: t("shortcuts.action.previousPage"),
+        },
+      ],
+    });
+  }
 
   return (
     <Dialog open={isShortcutsOpen} onOpenChange={setShortcutsOpen}>
