@@ -22,19 +22,19 @@ export function EinkPager({
   const { t } = useI18n();
 
   return (
-    <div className="flex items-center justify-between gap-2 border-t bg-background px-4 py-2 sm:px-6">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-t bg-background px-4 py-2 sm:px-6">
       <Button
         variant="outline"
         size="sm"
         onClick={onPrev}
         disabled={!canPrev}
-        className="h-auto gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground"
+        className="h-auto justify-self-start gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
         {t("common.previous")}
       </Button>
       <span
-        className="text-sm tabular-nums text-muted-foreground"
+        className="justify-self-center text-sm tabular-nums text-muted-foreground"
         aria-live="polite"
       >
         {page + 1} / {totalPages}
@@ -44,7 +44,7 @@ export function EinkPager({
         size="sm"
         onClick={onNext}
         disabled={!canNext}
-        className="h-auto gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground"
+        className="h-auto justify-self-end gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground"
       >
         {t("common.next")}
         <ChevronRight className="h-4 w-4" />
