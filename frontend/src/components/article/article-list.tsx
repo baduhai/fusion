@@ -11,7 +11,10 @@ import { SidebarTrigger } from "@/components/layout/sidebar-trigger";
 import { FloatingActionBar } from "./floating-action-bar";
 import { SelectionCheckbox } from "./selection-checkbox";
 import { useArticleNavigation } from "@/hooks/use-keyboard";
+import { useEinkPaging } from "@/hooks/use-eink-paging";
+import { useElementSize } from "@/hooks/use-element-size";
 import { useUrlState, type ArticleFilter } from "@/hooks/use-url-state";
+import { EinkPager } from "./eink/eink-pager";
 import {
   itemQueries,
   useItems,
@@ -31,7 +34,7 @@ import {
 import { queryKeys } from "@/queries/keys";
 import { getFaviconUrl } from "@/lib/api/favicon";
 import { useI18n } from "@/lib/i18n";
-import { useUIStore } from "@/store";
+import { usePreferencesStore, useUIStore } from "@/store";
 import { toast } from "sonner";
 import type { Item } from "@/lib/api";
 
@@ -40,6 +43,10 @@ interface ArticleListProps {
 }
 
 const EMPTY_SELECTION = new Set<number>();
+
+// Fixed row height for e-ink pagination; rows are clamped to one line each so
+// a whole page always fits the available height without scrolling.
+const EINK_ROW_HEIGHT = 108;
 
 export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const { t } = useI18n();
@@ -63,6 +70,8 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     { context: "\u0000", ids: EMPTY_SELECTION },
   );
   const listContentRef = useRef<HTMLDivElement>(null);
+  const einkMode = usePreferencesStore((s) => s.einkMode);
+  const [listAreaRef, listAreaSize] = useElementSize<HTMLDivElement>();
 
   const isStandalone = standaloneFeedId !== undefined;
   const deleteItem = useDeleteItem();
@@ -76,6 +85,23 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
   const selectionContext = `${effectiveFeedId ?? ""}|${effectiveGroupId ?? ""}|${articleFilter}|${isStandalone ? 1 : 0}`;
   const selectedIds =
     selection.context === selectionContext ? selection.ids : EMPTY_SELECTION;
+
+  // E-ink list page: reset when the reading context changes (adjusting state
+  // during render instead of an effect avoids an extra render pass).
+  const [pageState, setPageState] = useState({ context: selectionContext, page: 0 });
+  if (pageState.context !== selectionContext) {
+    setPageState({ context: selectionContext, page: 0 });
+  }
+
+  const setListPage = useCallback(
+    (updater: number | ((current: number) => number)) => {
+      setPageState((current) => ({
+        ...current,
+        page: typeof updater === "function" ? updater(current.page) : updater,
+      }));
+    },
+    [],
+  );
 
   const updateSelection = useCallback(
     (updater: (prev: Set<number>) => Set<number>) => {
@@ -144,17 +170,53 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
     [articles, getArticleUnread],
   );
 
+  // E-ink pagination: fit a whole number of fixed-height rows per screen.
+  const perPage = einkMode
+    ? Math.max(1, Math.floor(listAreaSize.height / EINK_ROW_HEIGHT))
+    : Number.POSITIVE_INFINITY;
+
+  const totalCount = isStarredMode
+    ? displayArticles.length
+    : (itemsQuery.data?.pages[0]?.total ?? displayArticles.length);
+
+  const totalPages = einkMode
+    ? Math.max(1, Math.ceil(totalCount / perPage))
+    : 1;
+
+  const listPage = Math.min(pageState.page, Math.max(0, totalPages - 1));
+
+  const pageItems = useMemo(
+    () =>
+      einkMode
+        ? displayArticles.slice(
+            listPage * perPage,
+            listPage * perPage + perPage,
+          )
+        : displayArticles,
+    [einkMode, displayArticles, listPage, perPage],
+  );
+
+  const canPrev = einkMode && listPage > 0;
+  const nextPageLoaded =
+    Number.isFinite(perPage) && displayArticles.length > (listPage + 1) * perPage;
+  const canNext =
+    einkMode &&
+    listPage + 1 < totalPages &&
+    (nextPageLoaded || !itemsQuery.hasNextPage);
+
+  const selectionScope = einkMode ? pageItems : displayArticles;
+
   const selectableArticles = useMemo(
-    () => displayArticles.filter((article) => article.id > 0),
-    [displayArticles],
+    () => selectionScope.filter((article) => article.id > 0),
+    [selectionScope],
   );
 
   const selectedVisibleIds = useMemo(
     () =>
-      displayArticles
+      selectionScope
         .filter((article) => article.id > 0 && selectedIds.has(article.id))
         .map((article) => article.id),
-    [displayArticles, selectedIds],
+    [selectionScope, selectedIds],
   );
 
   const isAllSelected =
@@ -179,6 +241,38 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
       listContentRef.current?.focus({ preventScroll: true });
     }
   }, [selectedArticleId]);
+
+  // Prefetch one page ahead so Next never lands on an empty page.
+  const fetchNextPage = itemsQuery.fetchNextPage;
+  useEffect(() => {
+    if (!einkMode || isStarredMode) {
+      return;
+    }
+    const needed = (listPage + 2) * perPage;
+    if (
+      displayArticles.length < needed &&
+      itemsQuery.hasNextPage &&
+      !itemsQuery.isFetchingNextPage
+    ) {
+      void fetchNextPage();
+    }
+  }, [
+    einkMode,
+    isStarredMode,
+    listPage,
+    perPage,
+    displayArticles.length,
+    itemsQuery.hasNextPage,
+    itemsQuery.isFetchingNextPage,
+    fetchNextPage,
+  ]);
+
+  // PageUp/PageDown turn list pages while no article is open.
+  useEinkPaging({
+    enabled: einkMode && selectedArticleId === null,
+    next: () => setListPage((current) => Math.min(current + 1, totalPages - 1)),
+    prev: () => setListPage((current) => Math.max(current - 1, 0)),
+  });
 
   // Determine title
   let title = t("article.list.all");
@@ -425,6 +519,151 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
 
   const showArchiveAll = articleFilter === "inbox" && !isStandalone;
 
+  const renderedArticles = einkMode ? pageItems : displayArticles;
+
+  const listBody = (
+    <>
+      {isLoading && articles.length === 0 ? (
+        <div className="space-y-2 p-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="h-24 animate-pulse rounded-md bg-accent"
+            />
+          ))}
+        </div>
+      ) : articles.length === 0 ? (
+        isStandalone ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              {t("standalone.empty")}
+            </p>
+          </div>
+        ) : hasNoFeeds ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              {t("article.list.noFeeds")}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate({ to: "/feeds" })}
+            >
+              {t("article.list.openFeedManagement")}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              {t("article.list.noArticles")}
+            </p>
+          </div>
+        )
+      ) : (
+        <>
+          {renderedArticles.map((article) => {
+            const feed = isStandalone ? null : getFeedById(article.feed_id);
+            const bookmark = getBookmarkByItemId(article.id);
+            const feedName = isStandalone
+              ? (() => {
+                  try { return new URL(article.link).hostname; }
+                  catch { return article.link; }
+                })()
+              : (feed?.name ?? bookmark?.feed_name ?? t("common.unknown"));
+
+            const toggleReadAction: SwipeAction = {
+              icon: article.unread ? (
+                <CircleCheck className="h-5 w-5 text-white" />
+              ) : (
+                <Circle className="h-5 w-5 text-white" />
+              ),
+              background: article.unread ? "bg-primary" : "bg-muted-foreground",
+              label: article.unread
+                ? t("article.action.markRead")
+                : t("article.action.markUnread"),
+            };
+
+            const swipeActions: { left?: SwipeAction; right?: SwipeAction } = (() => {
+              const right = toggleReadAction;
+              let left: SwipeAction | undefined;
+
+              if (articleFilter === "inbox" && !isStandalone) {
+                left = {
+                  icon: <Archive className="h-5 w-5 text-white" />,
+                  background: "bg-slate-500",
+                  label: t("article.action.archive"),
+                };
+              } else if (isStandalone) {
+                left = {
+                  icon: <Trash2 className="h-5 w-5 text-white" />,
+                  background: "bg-destructive",
+                  label: t("article.action.remove"),
+                };
+              }
+
+              return { right, left };
+            })();
+
+            const renderedItem = (
+              <ArticleItem
+                key={article.id}
+                article={article}
+                selectedArticleId={selectedArticleId}
+                onSelectArticle={setSelectedArticle}
+                onToggleRead={handleToggleRead}
+                onToggleStar={handleToggleStar}
+                canToggleRead={article.id > 0}
+                isStarred={isItemStarred(article.id)}
+                feedName={feedName}
+                feedFaviconUrl={
+                  feed ? getFaviconUrl(feed.link, feed.site_url) : null
+                }
+                onRemove={isStandalone ? handleRemoveArticle : undefined}
+                onArchive={articleFilter === "inbox" && !isStandalone ? handleArchive : undefined}
+                swipeActions={swipeActions}
+                selectionMode={selectionMode}
+                selected={selectedIds.has(article.id)}
+                onToggleSelection={handleToggleSelection}
+              />
+            );
+
+            if (!einkMode) {
+              return renderedItem;
+            }
+
+            return (
+              <div
+                key={article.id}
+                style={{ height: EINK_ROW_HEIGHT }}
+                className="overflow-hidden"
+              >
+                {renderedItem}
+              </div>
+            );
+          })}
+          {!einkMode && hasMore && (
+            <div className="flex justify-center py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => itemsQuery.fetchNextPage()}
+                disabled={isLoadingMore}
+                className="gap-2"
+              >
+                {isLoadingMore && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {isLoadingMore
+                  ? t("article.list.loading")
+                  : t("article.list.loadMore")}
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
+
   return (
     <div className="flex h-full flex-col">
       <ContentHeader>
@@ -493,135 +732,30 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
         )}
 
         {/* Article list */}
-        <ScrollArea className="min-h-0 flex-1">
-          <div ref={listContentRef} tabIndex={-1} className="outline-none">
-            {isLoading && articles.length === 0 ? (
-              <div className="space-y-2 p-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="h-24 animate-pulse rounded-md bg-accent"
-                  />
-                ))}
-              </div>
-            ) : articles.length === 0 ? (
-              isStandalone ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {t("standalone.empty")}
-                  </p>
-                </div>
-              ) : hasNoFeeds ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {t("article.list.noFeeds")}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate({ to: "/feeds" })}
-                  >
-                    {t("article.list.openFeedManagement")}
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {t("article.list.noArticles")}
-                  </p>
-                </div>
-              )
-            ) : (
-              <>
-                {displayArticles.map((article) => {
-                  const feed = isStandalone ? null : getFeedById(article.feed_id);
-                  const bookmark = getBookmarkByItemId(article.id);
-                  const feedName = isStandalone
-                    ? (() => {
-                        try { return new URL(article.link).hostname; }
-                        catch { return article.link; }
-                      })()
-                    : (feed?.name ?? bookmark?.feed_name ?? t("common.unknown"));
-
-                  const toggleReadAction: SwipeAction = {
-                    icon: article.unread ? (
-                      <CircleCheck className="h-5 w-5 text-white" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-white" />
-                    ),
-                    background: article.unread ? "bg-primary" : "bg-muted-foreground",
-                    label: article.unread
-                      ? t("article.action.markRead")
-                      : t("article.action.markUnread"),
-                  };
-
-                  const swipeActions: { left?: SwipeAction; right?: SwipeAction } = (() => {
-                    const right = toggleReadAction;
-                    let left: SwipeAction | undefined;
-
-                    if (articleFilter === "inbox" && !isStandalone) {
-                      left = {
-                        icon: <Archive className="h-5 w-5 text-white" />,
-                        background: "bg-slate-500",
-                        label: t("article.action.archive"),
-                      };
-                    } else if (isStandalone) {
-                      left = {
-                        icon: <Trash2 className="h-5 w-5 text-white" />,
-                        background: "bg-destructive",
-                        label: t("article.action.remove"),
-                      };
-                    }
-
-                    return { right, left };
-                  })();
-
-                  return (
-                    <ArticleItem
-                      key={article.id}
-                      article={article}
-                      selectedArticleId={selectedArticleId}
-                      onSelectArticle={setSelectedArticle}
-                      onToggleRead={handleToggleRead}
-                      onToggleStar={handleToggleStar}
-                      canToggleRead={article.id > 0}
-                      isStarred={isItemStarred(article.id)}
-                      feedName={feedName}
-                      feedFaviconUrl={
-                        feed ? getFaviconUrl(feed.link, feed.site_url) : null
-                      }
-                      onRemove={isStandalone ? handleRemoveArticle : undefined}
-                      onArchive={articleFilter === "inbox" && !isStandalone ? handleArchive : undefined}
-                      swipeActions={swipeActions}
-                      selectionMode={selectionMode}
-                      selected={selectedIds.has(article.id)}
-                      onToggleSelection={handleToggleSelection}
-                    />
-                  );
-                })}
-                {hasMore && (
-                  <div className="flex justify-center py-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => itemsQuery.fetchNextPage()}
-                      disabled={isLoadingMore}
-                      className="gap-2"
-                    >
-                      {isLoadingMore && (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      )}
-                      {isLoadingMore
-                        ? t("article.list.loading")
-                        : t("article.list.loadMore")}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
+        {einkMode ? (
+          <div ref={listAreaRef} className="min-h-0 flex-1 overflow-hidden">
+            {listBody}
           </div>
-        </ScrollArea>
+        ) : (
+          <ScrollArea className="min-h-0 flex-1">
+            <div ref={listContentRef} tabIndex={-1} className="outline-none">
+              {listBody}
+            </div>
+          </ScrollArea>
+        )}
       </div>
+      {einkMode && (
+        <EinkPager
+          page={listPage}
+          totalPages={totalPages}
+          canPrev={canPrev}
+          canNext={canNext}
+          onPrev={() => setListPage((current) => Math.max(current - 1, 0))}
+          onNext={() =>
+            setListPage((current) => Math.min(current + 1, totalPages - 1))
+          }
+        />
+      )}
       <FloatingActionBar
         context={fabContext}
         feed={currentFeed}
@@ -635,6 +769,7 @@ export function ArticleList({ standaloneFeedId }: ArticleListProps) {
         selectionMode={selectionMode}
         onToggleSelectionMode={handleToggleSelectionMode}
         canSelect={selectableArticles.length > 0}
+        einkAbovePager={einkMode}
       />
     </div>
   );

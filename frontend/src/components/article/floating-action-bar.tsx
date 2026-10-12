@@ -25,6 +25,7 @@ export interface FloatingActionBarProps {
   selectionMode: boolean;
   onToggleSelectionMode: () => void;
   canSelect: boolean;
+  einkAbovePager?: boolean;
 }
 
 export function FloatingActionBar({
@@ -40,6 +41,7 @@ export function FloatingActionBar({
   selectionMode,
   onToggleSelectionMode,
   canSelect,
+  einkAbovePager = false,
 }: FloatingActionBarProps) {
   const { t } = useI18n();
   const { setEditFeedOpen } = useUIStore();
@@ -69,7 +71,12 @@ export function FloatingActionBar({
     (context === "group" && refreshGroup.isPending);
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 rounded-lg border bg-background shadow-md p-1">
+    <div
+      className={cn(
+        "fixed right-6 z-40 rounded-lg border bg-background shadow-md p-1",
+        einkAbovePager ? "bottom-20" : "bottom-6",
+      )}
+    >
       <div className="flex flex-col gap-0.5">
         <Tooltip>
           <TooltipTrigger asChild>
