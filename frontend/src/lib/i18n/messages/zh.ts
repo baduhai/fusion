@@ -178,6 +178,7 @@ export const zhMessages: PartialMessages = {
   "article.action.fetchingContent": "获取中...",
   "article.action.markRead": "标记为已读",
   "article.action.markUnread": "标记为未读",
+  "article.action.more": "更多操作",
   "article.action.openInBrowser": "在浏览器中打开",
   "article.action.original": "原文",
   "article.action.star": "收藏",

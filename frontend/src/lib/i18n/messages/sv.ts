@@ -178,6 +178,7 @@ export const svMessages: PartialMessages = {
   "article.action.fetchingContent": "Hämtar...",
   "article.action.markRead": "Markera som last",
   "article.action.markUnread": "Markera som olast",
+  "article.action.more": "Fler atgarder",
   "article.action.openInBrowser": "Oppna i webblasaren",
   "article.action.original": "Original",
   "article.action.star": "Stjarna",

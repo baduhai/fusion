@@ -174,6 +174,7 @@ export const esMessages: PartialMessages = {
   "feeds.toast.renamed": "Grupo renombrado",
   "article.action.markRead": "Marcar como leido",
   "article.action.markUnread": "Marcar como no leido",
+  "article.action.more": "Mas acciones",
   "article.action.openInBrowser": "Abrir en el navegador",
   "article.action.original": "Original",
   "article.action.star": "Destacar",

@@ -187,6 +187,7 @@ export const deMessages: PartialMessages = {
   "article.action.fetchingContent": "Wird abgerufen...",
   "article.action.markRead": "Als gelesen markieren",
   "article.action.markUnread": "Als ungelesen markieren",
+  "article.action.more": "Weitere Aktionen",
   "article.action.openInBrowser": "Im Browser offnen",
   "article.action.original": "Original",
   "article.action.star": "Favorisieren",

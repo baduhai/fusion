@@ -37,6 +37,7 @@ import { processArticleContent } from "@/lib/content";
 import { getFaviconUrl } from "@/lib/api/favicon";
 import { FeedFavicon } from "@/components/feed/feed-favicon";
 import { toSafeExternalUrl } from "@/lib/safe-url";
+import { ArticleActionsBar, type ArticleAction } from "./article-actions-bar";
 import { EinkArticleView } from "./eink/eink-article-view";
 
 const standaloneFeedLink = "fusion://standalone";
@@ -207,6 +208,16 @@ export function ArticleDrawer() {
     }
   };
 
+  const handleAddToInbox = async () => {
+    if (!article || !canToggleRead) return;
+    addedToInboxRef.current = article.id;
+    try {
+      await markUnread.mutateAsync([article.id]);
+    } catch (error) {
+      console.error("Failed to add to inbox:", error);
+    }
+  };
+
   const handleOpenOriginal = () => {
     if (!safeArticleLink) return;
     window.open(safeArticleLink, "_blank", "noopener,noreferrer");
@@ -342,6 +353,91 @@ export function ArticleDrawer() {
     </>
   ) : null;
 
+  // Ordered by priority: the actions bar keeps the highest-priority items
+  // inline and only moves the tail into the overflow menu. Remove stays last
+  // because it is destructive and only applies to standalone articles.
+  const actions: ArticleAction[] = article
+    ? [
+        {
+          id: "toggle-read",
+          label: article.unread
+            ? t("article.action.markRead")
+            : t("article.action.markUnread"),
+          icon: article.unread ? (
+            <Circle className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <CircleCheck className="h-4 w-4 text-primary" />
+          ),
+          onSelect: () => {
+            void handleToggleRead();
+          },
+          disabled: !canToggleRead,
+        },
+        {
+          id: "star",
+          label: starred ? t("article.action.unstar") : t("article.action.star"),
+          icon: (
+            <Star
+              className={`h-4 w-4 ${starred ? "fill-current text-amber-500" : ""}`}
+            />
+          ),
+          onSelect: () => {
+            void handleToggleStar();
+          },
+        },
+        {
+          id: "fetch-content",
+          label: fetchContent.isPending
+            ? t("article.action.fetchingContent")
+            : t("article.action.fetchContent"),
+          icon: (
+            <FileText
+              className={`h-4 w-4 ${fetchContent.isPending ? "animate-pulse" : ""}`}
+            />
+          ),
+          onSelect: () => {
+            void handleFetchContent();
+          },
+          disabled: fetchContent.isPending || Boolean(article.full_content),
+        },
+        {
+          id: "original",
+          label: t("article.action.original"),
+          icon: <ExternalLink className="h-4 w-4" />,
+          href: safeArticleLink ?? undefined,
+          disabled: !safeArticleLink,
+        },
+        ...((!article.unread || article.archived) && canToggleRead
+          ? [
+              {
+                id: "add-to-inbox",
+                label: t("article.action.addToInbox"),
+                icon: <Inbox className="h-4 w-4" />,
+                onSelect: () => {
+                  void handleAddToInbox();
+                },
+              } satisfies ArticleAction,
+            ]
+          : []),
+        ...(isStandalone
+          ? [
+              {
+                id: "remove",
+                label: deleteItem.isPending
+                  ? t("common.deleting")
+                  : t("standalone.remove"),
+                icon: <Trash2 className="h-4 w-4 text-destructive" />,
+                onSelect: () => {
+                  void handleRemove();
+                },
+                disabled: deleteItem.isPending,
+                destructive: true,
+              } satisfies ArticleAction,
+            ]
+          : []),
+      ]
+    : [];
+
   return (
     <Sheet open={selectedArticleId !== null} onOpenChange={handleOpenChange}>
       <SheetContent
@@ -356,105 +452,8 @@ export function ArticleDrawer() {
         {article && (
           <div className="flex h-full flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
-              <div className="flex items-center gap-2 overflow-x-auto min-w-0 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleRead}
-                  disabled={!canToggleRead}
-                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                >
-                  {article.unread ? (
-                    <Circle className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <CircleCheck className="h-4 w-4 text-primary" />
-                  )}
-                  {article.unread
-                    ? t("article.action.markRead")
-                    : t("article.action.markUnread")}
-                </Button>
-                {(!article.unread || article.archived) && canToggleRead && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      addedToInboxRef.current = article.id;
-                      try {
-                        await markUnread.mutateAsync([article.id]);
-                      } catch (error) {
-                        console.error("Failed to add to inbox:", error);
-                      }
-                    }}
-                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                  >
-                    <Inbox className="h-4 w-4" />
-                    {t("article.action.addToInbox")}
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleStar}
-                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                >
-                  <Star
-                    className={`h-4 w-4 ${starred ? "fill-current text-amber-500" : ""}`}
-                  />
-                  {starred ? t("article.action.unstar") : t("article.action.star")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleFetchContent}
-                  disabled={fetchContent.isPending || (!!article.full_content)}
-                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                >
-                  <FileText className={`h-4 w-4 ${fetchContent.isPending ? "animate-pulse" : ""}`} />
-                  {fetchContent.isPending
-                    ? t("article.action.fetchingContent")
-                    : t("article.action.fetchContent")}
-                </Button>
-                <Button
-                  asChild={Boolean(safeArticleLink)}
-                  variant="outline"
-                  size="sm"
-                  onClick={safeArticleLink ? undefined : handleOpenOriginal}
-                  disabled={!safeArticleLink}
-                  className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                >
-                  {safeArticleLink ? (
-                    <a
-                      href={safeArticleLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      {t("article.action.original")}
-                    </a>
-                  ) : (
-                    <>
-                      <ExternalLink className="h-4 w-4" />
-                      {t("article.action.original")}
-                    </>
-                  )}
-                </Button>
-                {isStandalone && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRemove}
-                    disabled={deleteItem.isPending}
-                    className="h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                    {deleteItem.isPending
-                      ? t("common.deleting")
-                      : t("standalone.remove")}
-                  </Button>
-                )}
-              </div>
+            <div className="flex items-center gap-2 border-b px-4 py-3 sm:px-6">
+              <ArticleActionsBar actions={actions} />
 
               <SheetTitle className="sr-only">{article.title}</SheetTitle>
 

@@ -178,6 +178,7 @@ export const ruMessages: PartialMessages = {
   "article.action.fetchingContent": "Загрузка...",
   "article.action.markRead": "Отметить как прочитанное",
   "article.action.markUnread": "Отметить как непрочитанное",
+  "article.action.more": "Ещё действия",
   "article.action.openInBrowser": "Открыть в браузере",
   "article.action.original": "Оригинал",
   "article.action.star": "В избранное",

@@ -176,6 +176,7 @@ export const frMessages: PartialMessages = {
   "article.action.fetchingContent": "Récupération...",
   "article.action.markRead": "Marquer comme lu",
   "article.action.markUnread": "Marquer comme non lu",
+  "article.action.more": "Plus d'actions",
   "article.action.openInBrowser": "Ouvrir dans le navigateur",
   "article.action.original": "Original",
   "article.action.star": "Favori",

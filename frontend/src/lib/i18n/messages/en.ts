@@ -209,6 +209,7 @@ export const enMessages = {
   "article.action.fetchingContent": "Fetching...",
   "article.action.markRead": "Mark as read",
   "article.action.markUnread": "Mark as unread",
+  "article.action.more": "More actions",
   "article.action.openInBrowser": "Open in browser",
   "article.action.original": "Original",
   "article.action.remove": "Remove",
