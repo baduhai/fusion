@@ -66,7 +66,20 @@ export function formatRelativeTime(timestamp: number): string {
 // padding by feed generators, plus BOM. They create unbreakable text runs.
 const INVISIBLE_CHARS = /[\u200B-\u200D\u2060\uFEFF]/g;
 
+// Sanitizing feed HTML is expensive and the same content is converted on every
+// render, twice per list item (summary + reading time). Cache the result so
+// repeated renders reuse it; entries are keyed by the source string.
+const PLAIN_TEXT_CACHE_MAX = 256;
+const plainTextCache = new Map<string, string>();
+
 function htmlToPlainText(html: string): string {
+  const cached = plainTextCache.get(html);
+  if (cached !== undefined) {
+    plainTextCache.delete(html);
+    plainTextCache.set(html, cached);
+    return cached;
+  }
+
   // Extract real text (decoding entities like &nbsp;) instead of the encoded
   // HTML string that DOMPurify returns by default.
   const fragment = DOMPurify.sanitize(html, {
@@ -74,10 +87,20 @@ function htmlToPlainText(html: string): string {
     RETURN_DOM_FRAGMENT: true,
   }) as DocumentFragment;
 
-  return (fragment.textContent ?? "")
+  const text = (fragment.textContent ?? "")
     .replace(INVISIBLE_CHARS, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  if (plainTextCache.size >= PLAIN_TEXT_CACHE_MAX) {
+    const oldest = plainTextCache.keys().next().value;
+    if (oldest !== undefined) {
+      plainTextCache.delete(oldest);
+    }
+  }
+  plainTextCache.set(html, text);
+
+  return text;
 }
 
 export function extractSummary(html: string, maxLength = 120): string {
