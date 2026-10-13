@@ -174,7 +174,7 @@ export function ArticleActionsBar({ actions }: ArticleActionsBarProps) {
             <Button
               variant="outline"
               size="sm"
-              className={ACTION_BUTTON_CLASS}
+              className={`${ACTION_BUTTON_CLASS} ml-auto`}
               aria-label={t("article.action.more")}
             >
               <MoreHorizontal className="h-4 w-4" />
