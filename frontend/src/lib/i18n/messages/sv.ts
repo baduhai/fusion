@@ -63,6 +63,8 @@ export const svMessages: PartialMessages = {
   "settings.eink.label": "E-ink-lage",
   "settings.einkTextSize.description": "Lastextstorlek for e-ink-lage",
   "settings.einkTextSize.label": "Textstorlek",
+  "settings.iconOnlyButtons.description": "Visa endast ikoner pa knappar, utan textetiketter",
+  "settings.iconOnlyButtons.label": "Endast ikon-knappar",
   "settings.installCancelled": "Installationen avbrots",
   "settings.language.description": "Valj ditt foredragna sprak",
   "settings.language.label": "Sprak",

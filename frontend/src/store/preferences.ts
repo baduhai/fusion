@@ -44,6 +44,7 @@ const defaultLocale: AppLocale =
   "en";
 const defaultArticlePageSize: ArticlePageSize = 10;
 const defaultAutoMarkRead = true;
+const defaultIconOnlyButtons = false;
 
 function normalizeLocale(locale: string): AppLocale {
   const supportedLocale = resolveSupportedLocale(locale);
@@ -74,11 +75,13 @@ export interface PreferencesState {
   locale: AppLocale;
   articlePageSize: ArticlePageSize;
   autoMarkRead: boolean;
+  iconOnlyButtons: boolean;
   einkMode: boolean;
   einkTextScale: EinkTextScale;
   setLocale: (locale: string) => void;
   setArticlePageSize: (size: number) => void;
   setAutoMarkRead: (enabled: boolean) => void;
+  setIconOnlyButtons: (enabled: boolean) => void;
   setEinkMode: (enabled: boolean) => void;
   setEinkTextScale: (scale: number) => void;
 }
@@ -89,12 +92,14 @@ export const usePreferencesStore = create<PreferencesState>()(
       locale: defaultLocale,
       articlePageSize: defaultArticlePageSize,
       autoMarkRead: defaultAutoMarkRead,
+      iconOnlyButtons: defaultIconOnlyButtons,
       einkMode: false,
       einkTextScale: 1,
       setLocale: (locale) => set({ locale: normalizeLocale(locale) }),
       setArticlePageSize: (size) =>
         set({ articlePageSize: normalizeArticlePageSize(size) }),
       setAutoMarkRead: (enabled) => set({ autoMarkRead: enabled }),
+      setIconOnlyButtons: (enabled) => set({ iconOnlyButtons: enabled }),
       setEinkMode: (enabled) => set({ einkMode: enabled }),
       setEinkTextScale: (scale) =>
         set({ einkTextScale: normalizeEinkTextScale(scale) }),
@@ -106,6 +111,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         locale: state.locale,
         articlePageSize: state.articlePageSize,
         autoMarkRead: state.autoMarkRead,
+        iconOnlyButtons: state.iconOnlyButtons,
         einkMode: state.einkMode,
         einkTextScale: state.einkTextScale,
       }),
@@ -119,6 +125,8 @@ export const usePreferencesStore = create<PreferencesState>()(
             persisted?.articlePageSize ?? currentState.articlePageSize,
           ),
           autoMarkRead: persisted?.autoMarkRead ?? currentState.autoMarkRead,
+          iconOnlyButtons:
+            persisted?.iconOnlyButtons ?? currentState.iconOnlyButtons,
           einkMode: persisted?.einkMode ?? currentState.einkMode,
           einkTextScale: normalizeEinkTextScale(
             persisted?.einkTextScale ?? currentState.einkTextScale,

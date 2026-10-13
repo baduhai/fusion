@@ -63,6 +63,8 @@ export const esMessages: PartialMessages = {
   "settings.eink.label": "Modo e-ink",
   "settings.einkTextSize.description": "Tamano del texto de lectura en modo e-ink",
   "settings.einkTextSize.label": "Tamano de texto",
+  "settings.iconOnlyButtons.description": "Mostrar solo iconos en los botones, sin etiquetas de texto",
+  "settings.iconOnlyButtons.label": "Botones solo con icono",
   "settings.installCancelled": "Instalacion cancelada",
   "settings.language.description": "Selecciona tu idioma preferido",
   "settings.language.label": "Idioma",

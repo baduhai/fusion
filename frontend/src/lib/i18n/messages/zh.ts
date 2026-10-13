@@ -63,6 +63,8 @@ export const zhMessages: PartialMessages = {
   "settings.eink.label": "墨水屏模式",
   "settings.einkTextSize.description": "墨水屏模式的阅读文字大小",
   "settings.einkTextSize.label": "文字大小",
+  "settings.iconOnlyButtons.description": "按钮只显示图标，不显示文字标签",
+  "settings.iconOnlyButtons.label": "仅图标按钮",
   "settings.installCancelled": "已取消安装",
   "settings.language.description": "选择你偏好的语言",
   "settings.language.label": "语言",

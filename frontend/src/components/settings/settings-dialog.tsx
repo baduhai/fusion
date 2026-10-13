@@ -54,7 +54,7 @@ function AppearanceContent() {
   const { theme, setTheme } = useTheme();
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
-  const { locale, articlePageSize, autoMarkRead, einkMode, einkTextScale, setLocale, setArticlePageSize, setAutoMarkRead, setEinkMode, setEinkTextScale } =
+  const { locale, articlePageSize, autoMarkRead, iconOnlyButtons, einkMode, einkTextScale, setLocale, setArticlePageSize, setAutoMarkRead, setIconOnlyButtons, setEinkMode, setEinkTextScale } =
     usePreferencesStore();
 
   return (
@@ -191,6 +191,22 @@ function AppearanceContent() {
           </Select>
         </div>
       )}
+
+      {/* Icon-only buttons */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium">
+            {t("settings.iconOnlyButtons.label")}
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            {t("settings.iconOnlyButtons.description")}
+          </p>
+        </div>
+        <Switch
+          checked={iconOnlyButtons}
+          onCheckedChange={setIconOnlyButtons}
+        />
+      </div>
 
       {/* Keyboard shortcuts */}
       <div className="flex items-center justify-between">

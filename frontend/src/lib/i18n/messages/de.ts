@@ -63,6 +63,8 @@ export const deMessages: PartialMessages = {
   "settings.eink.label": "E-Ink-Modus",
   "settings.einkTextSize.description": "Lesetextgrosse fur den E-Ink-Modus",
   "settings.einkTextSize.label": "Textgrosse",
+  "settings.iconOnlyButtons.description": "Nur Symbole auf Schaltflachen anzeigen, ohne Textbeschriftungen",
+  "settings.iconOnlyButtons.label": "Nur-Symbol-Schaltflachen",
   "settings.installCancelled": "Installation abgebrochen",
   "settings.language.description": "Bevorzugte Sprache auswahlen",
   "settings.language.label": "Sprache",

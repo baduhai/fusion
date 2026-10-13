@@ -63,6 +63,8 @@ export const ruMessages: PartialMessages = {
   "settings.eink.label": "Режим E-ink",
   "settings.einkTextSize.description": "Размер текста для режима E-ink",
   "settings.einkTextSize.label": "Размер текста",
+  "settings.iconOnlyButtons.description": "Показывать только значки на кнопках, без текстовых подписей",
+  "settings.iconOnlyButtons.label": "Кнопки только со значком",
   "settings.installCancelled": "Установка отменена",
   "settings.language.description": "Выберите предпочтительный язык",
   "settings.language.label": "Язык",

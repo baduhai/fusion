@@ -63,6 +63,8 @@ export const enMessages = {
   "settings.eink.label": "E-ink mode",
   "settings.einkTextSize.description": "Reading text size for e-ink mode",
   "settings.einkTextSize.label": "Text size",
+  "settings.iconOnlyButtons.description": "Show only icons on buttons, without text labels",
+  "settings.iconOnlyButtons.label": "Icon-only buttons",
   "settings.installCancelled": "Installation cancelled",
   "settings.language.description": "Select your preferred language",
   "settings.language.label": "Language",

@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePreferencesStore } from "@/store";
 import { useI18n } from "@/lib/i18n";
 
 /**
@@ -38,6 +39,9 @@ export interface ArticleAction {
 const ACTION_BUTTON_CLASS =
   "h-auto gap-1.5 px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground";
 
+const ICON_ONLY_BUTTON_CLASS =
+  "h-auto px-2 py-1.5 text-[13px] font-medium text-muted-foreground";
+
 const DEFAULT_GAP = 8;
 
 interface ArticleActionsBarProps {
@@ -49,13 +53,30 @@ interface Fit {
   overflow: boolean;
 }
 
-function ActionButton({ action }: { action: ArticleAction }) {
+function ActionButton({
+  action,
+  iconOnly,
+}: {
+  action: ArticleAction;
+  iconOnly: boolean;
+}) {
+  const className = iconOnly ? ICON_ONLY_BUTTON_CLASS : ACTION_BUTTON_CLASS;
+  // Icon-only buttons lose their visible label, so keep it as the accessible
+  // name and native tooltip.
+  const accessibleName = iconOnly ? action.label : undefined;
+
   if (action.href) {
     return (
-      <Button asChild variant="outline" size="sm" className={ACTION_BUTTON_CLASS}>
-        <a href={action.href} target="_blank" rel="noopener noreferrer">
+      <Button asChild variant="outline" size="sm" className={className}>
+        <a
+          href={action.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={accessibleName}
+          title={accessibleName}
+        >
           {action.icon}
-          {action.label}
+          {!iconOnly && action.label}
         </a>
       </Button>
     );
@@ -67,10 +88,12 @@ function ActionButton({ action }: { action: ArticleAction }) {
       size="sm"
       disabled={action.disabled}
       onClick={action.onSelect}
-      className={ACTION_BUTTON_CLASS}
+      className={className}
+      aria-label={accessibleName}
+      title={accessibleName}
     >
       {action.icon}
-      {action.label}
+      {!iconOnly && action.label}
     </Button>
   );
 }
@@ -83,6 +106,7 @@ function ActionButton({ action }: { action: ArticleAction }) {
  */
 export function ArticleActionsBar({ actions }: ArticleActionsBarProps) {
   const { t } = useI18n();
+  const iconOnly = usePreferencesStore((s) => s.iconOnlyButtons);
   const rootRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const fitRef = useRef<() => void>(() => {});
@@ -165,7 +189,7 @@ export function ArticleActionsBar({ actions }: ArticleActionsBarProps) {
   return (
     <div ref={rootRef} className="flex min-w-0 flex-1 items-center gap-2">
       {actions.slice(0, fit.visible).map((action) => (
-        <ActionButton key={action.id} action={action} />
+        <ActionButton key={action.id} action={action} iconOnly={iconOnly} />
       ))}
 
       {fit.overflow && (
@@ -174,7 +198,7 @@ export function ArticleActionsBar({ actions }: ArticleActionsBarProps) {
             <Button
               variant="outline"
               size="sm"
-              className={`${ACTION_BUTTON_CLASS} ml-auto`}
+              className={`${iconOnly ? ICON_ONLY_BUTTON_CLASS : ACTION_BUTTON_CLASS} ml-auto`}
               aria-label={t("article.action.more")}
             >
               <MoreHorizontal className="h-4 w-4" />
@@ -220,7 +244,7 @@ export function ArticleActionsBar({ actions }: ArticleActionsBarProps) {
         className="pointer-events-none invisible fixed left-0 top-0 flex items-center gap-2 whitespace-nowrap"
       >
         {actions.map((action) => (
-          <ActionButton key={action.id} action={action} />
+          <ActionButton key={action.id} action={action} iconOnly={iconOnly} />
         ))}
         <Button variant="outline" size="sm" className={ACTION_BUTTON_CLASS}>
           <MoreHorizontal className="h-4 w-4" />

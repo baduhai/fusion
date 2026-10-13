@@ -63,6 +63,8 @@ export const frMessages: PartialMessages = {
   "settings.eink.label": "Mode e-ink",
   "settings.einkTextSize.description": "Taille du texte de lecture en mode e-ink",
   "settings.einkTextSize.label": "Taille du texte",
+  "settings.iconOnlyButtons.description": "Afficher uniquement les icones sur les boutons, sans libelles",
+  "settings.iconOnlyButtons.label": "Boutons icone seule",
   "settings.installCancelled": "Installation annulee",
   "settings.language.description": "Selectionnez votre langue preferee",
   "settings.language.label": "Langue",
