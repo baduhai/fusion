@@ -292,6 +292,20 @@
   max-width: 100%;
 }
 
+/* Firefox does not fragment tables across e-ink columns: a tall email-style
+   layout table lands entirely in one column and collapses the page count, so
+   most of the article becomes unreachable. Flatten layout tables (flagged by
+   processArticleContent) to blocks so their content can break across columns.
+   Genuine data tables are left alone. Direct combinators keep a data table
+   nested inside a layout table from being flattened too. */
+.eink .prose table.eink-layout-table,
+.eink .prose table.eink-layout-table > :is(thead, tbody, tfoot, tr),
+.eink .prose table.eink-layout-table > :is(thead, tbody, tfoot) > tr,
+.eink .prose table.eink-layout-table > :is(thead, tbody, tfoot) > tr > :is(td, th),
+.eink .prose table.eink-layout-table > tr > :is(td, th) {
+  display: block;
+}
+
 /* Reading text size for e-ink, driven by the text-scale preference. The
    typography plugin sizes prose (and its headings) in em, so scaling the
    container scales everything. */

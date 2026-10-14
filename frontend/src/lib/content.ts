@@ -113,6 +113,53 @@ function removeEmptyWrappers(root: DocumentFragment): void {
   }
 }
 
+// Block-level content inside a cell marks a table as structural scaffolding
+// (typical of email newsletters) rather than a data table.
+const BLOCK_LEVEL_IN_CELL = new Set([
+  "div",
+  "p",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "ul",
+  "ol",
+  "blockquote",
+  "pre",
+  "figure",
+  "table",
+  "hr",
+]);
+
+function isLayoutTable(table: Element): boolean {
+  // A table nested inside a table is scaffolding, never a data table.
+  if (table.querySelector("table")) return true;
+  // Header cells or a caption signal a data table.
+  if (table.querySelector("th, caption")) return false;
+  // Otherwise it is a data table unless its cells hold block-level content.
+  for (const cell of table.querySelectorAll("td")) {
+    for (const child of Array.from(cell.children)) {
+      if (BLOCK_LEVEL_IN_CELL.has(child.tagName.toLowerCase())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Tags layout tables so the e-ink stylesheet can flatten them: Firefox does not
+// fragment tables across columns, so an unflattened email-style table collapses
+// the reader's page count and hides most of the article.
+function markLayoutTables(root: DocumentFragment): void {
+  for (const table of root.querySelectorAll("table")) {
+    if (isLayoutTable(table)) {
+      table.classList.add("eink-layout-table");
+    }
+  }
+}
+
 export function processArticleContent(
   html: string,
   articleUrl?: string,
@@ -128,6 +175,7 @@ export function processArticleContent(
   sanitizeAnchors(fragment, safeArticleUrl);
   sanitizeImages(fragment, safeArticleUrl);
   removeEmptyWrappers(fragment);
+  markLayoutTables(fragment);
 
   const container = document.createElement("div");
   container.appendChild(fragment);
