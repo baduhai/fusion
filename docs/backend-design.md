@@ -248,8 +248,10 @@ flowchart TD
 
 ### Manual refresh
 
-- `POST /feeds/refresh`: refresh all non-suspended feeds
-- `POST /feeds/:id/refresh`: refresh one feed
+- `POST /feeds/refresh`: refresh all non-suspended feeds (async, returns `202`)
+- `POST /feeds/:id/refresh`: refresh one feed; runs the pull synchronously and
+  returns `200` only after items are stored, so the client's refetch sees them
+- `POST /groups/:id/refresh`: refresh a group's feeds (async, returns `202`)
 - Manual refresh bypasses periodic skip logic
 
 ## 9. Security model

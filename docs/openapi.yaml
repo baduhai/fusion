@@ -382,10 +382,11 @@ paths:
       - $ref: "#/components/parameters/IdPath"
     post:
       tags: [Feeds]
-      summary: Trigger async refresh for one feed
+      summary: Refresh one feed and wait for it to complete
+      description: Pulls the feed synchronously; returns once new items are stored.
       responses:
-        "202":
-          description: Refresh accepted
+        "200":
+          description: Refresh completed
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":

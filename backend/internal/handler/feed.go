@@ -385,18 +385,17 @@ func (h *Handler) refreshFeed(c *gin.Context) {
 		return
 	}
 
-	// Trigger refresh in background.
-	// Do not use the request context here: once the handler returns, it may be cancelled.
+	// Pull synchronously so the response is a completion signal: the client
+	// refetches items only after the new rows are written. The request context
+	// is detached so a client disconnect still records the pulled items.
 	refreshTimeout := time.Duration(h.config.PullTimeout) * time.Second
-	go func(feedID int64) {
-		ctx, cancel := context.WithTimeout(context.Background(), refreshTimeout)
-		defer cancel()
-		if err := h.puller.RefreshFeed(ctx, feedID); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-			slog.Warn("refresh feed failed", "feed_id", feedID, "error", err)
-		}
-	}(id)
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), refreshTimeout)
+	defer cancel()
+	if err := h.puller.RefreshFeed(ctx, id); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+		slog.Warn("refresh feed failed", "feed_id", id, "error", err)
+	}
 
-	c.Status(http.StatusAccepted)
+	c.Status(http.StatusOK)
 }
 
 func (h *Handler) refreshAllFeeds(c *gin.Context) {

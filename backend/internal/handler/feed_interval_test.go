@@ -21,7 +21,7 @@ type recordingPuller struct {
 
 func (p *recordingPuller) Wake() { p.wakes.Add(1) }
 
-func newAnonTestHandler(t *testing.T, puller *recordingPuller) (*Handler, *store.Store) {
+func newAnonTestHandler(t *testing.T, puller testPuller) (*Handler, *store.Store) {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "test.db")

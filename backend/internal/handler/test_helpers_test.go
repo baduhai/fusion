@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,6 +11,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// testPuller matches the puller dependency accepted by Handler.
+type testPuller interface {
+	RefreshFeed(ctx context.Context, feedID int64) error
+	RefreshAll(ctx context.Context) (int, error)
+	Wake()
+}
 
 func newTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
