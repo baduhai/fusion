@@ -223,6 +223,7 @@ export const ruMessages: PartialMessages = {
   "article.list.inbox": "Входящие",
   "article.readingTime.lessThanOne": "< 1 мин чтения",
   "article.readingTime.minutes": "{minutes} мин чтения",
+  "article.toast.fetchContentFailed": "Не удалось загрузить полное содержание",
   "feed.standaloneArticles": "Отдельные статьи",
   "settings.autoMarkRead.description": "Автоматически отмечать статьи прочитанными после прокрутки большей части страницы",
   "settings.autoMarkRead.label": "Автоматически отмечать прочитанным",

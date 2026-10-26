@@ -223,6 +223,7 @@ export const deMessages: PartialMessages = {
   "article.list.inbox": "Posteingang",
   "article.readingTime.lessThanOne": "< 1 Min. Lesezeit",
   "article.readingTime.minutes": "{minutes} Min. Lesezeit",
+  "article.toast.fetchContentFailed": "Volltext konnte nicht abgerufen werden",
   "feed.standaloneArticles": "Eigenstandige Artikel",
   "settings.autoMarkRead.description": "Artikel automatisch als gelesen markieren, nachdem der grosste Teil der Seite gescrollt wurde",
   "settings.autoMarkRead.label": "Automatisch als gelesen markieren",

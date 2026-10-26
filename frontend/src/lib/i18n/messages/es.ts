@@ -219,6 +219,7 @@ export const esMessages: PartialMessages = {
   "article.list.inbox": "Bandeja de entrada",
   "article.readingTime.lessThanOne": "< 1 min de lectura",
   "article.readingTime.minutes": "{minutes} min de lectura",
+  "article.toast.fetchContentFailed": "No se pudo obtener el contenido completo",
   "feed.standaloneArticles": "Articulos independientes",
   "settings.autoMarkRead.description": "Marcar automaticamente los articulos como leidos tras desplazarse por la mayor parte de la pagina",
   "settings.autoMarkRead.label": "Marcar como leido automaticamente",

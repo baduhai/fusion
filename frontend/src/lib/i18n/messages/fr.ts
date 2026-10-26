@@ -221,6 +221,7 @@ export const frMessages: PartialMessages = {
   "article.list.inbox": "Boite de reception",
   "article.readingTime.lessThanOne": "< 1 min de lecture",
   "article.readingTime.minutes": "{minutes} min de lecture",
+  "article.toast.fetchContentFailed": "Impossible de récupérer le contenu complet",
   "feed.standaloneArticles": "Articles autonomes",
   "settings.autoMarkRead.description": "Marquer automatiquement les articles comme lus apres avoir parcouru la majeure partie de la page",
   "settings.autoMarkRead.label": "Marquer comme lu automatiquement",

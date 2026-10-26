@@ -223,6 +223,7 @@ export const svMessages: PartialMessages = {
   "article.list.inbox": "Inkorgen",
   "article.readingTime.lessThanOne": "< 1 min lasning",
   "article.readingTime.minutes": "{minutes} min lasning",
+  "article.toast.fetchContentFailed": "Det gick inte att hämta hela innehållet",
   "feed.standaloneArticles": "Fristaende artiklar",
   "settings.autoMarkRead.description": "Markera artiklar som lasta automatiskt efter att ha scrollat genom det mesta av sidan",
   "settings.autoMarkRead.label": "Markera som lasta automatiskt",

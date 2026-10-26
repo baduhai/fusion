@@ -2,10 +2,52 @@ package handler
 
 import (
 	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 )
+
+func TestFetchItemContentReportsBlockedSource(t *testing.T) {
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer source.Close()
+
+	h, st := newAnonTestHandler(t, &noopPuller{})
+	h.config.AllowPrivateFeeds = true
+
+	group, err := st.CreateGroup("G")
+	if err != nil {
+		t.Fatalf("create group: %v", err)
+	}
+	feed, err := st.CreateFeed(group.ID, "Feed", source.URL, "", "", nil, false)
+	if err != nil {
+		t.Fatalf("create feed: %v", err)
+	}
+	item, err := st.CreateItem(feed.ID, "guid", "Title", source.URL, "teaser", 0)
+	if err != nil {
+		t.Fatalf("create item: %v", err)
+	}
+
+	router := h.SetupRouter()
+	w := performRequest(
+		router,
+		http.MethodPost,
+		"/api/items/"+strconv.FormatInt(item.ID, 10)+"/fetch-content",
+		nil,
+		nil,
+	)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "source returned HTTP 403") {
+		t.Fatalf("expected blocked-source error, got %q", w.Body.String())
+	}
+}
 
 func TestMarkItemsBatchValidation(t *testing.T) {
 	ids := make([]int64, maxBatchUpdateIDs+1)

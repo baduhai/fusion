@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -274,7 +275,9 @@ func (h *Handler) fetchItemContent(c *gin.Context) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		badRequestError(c, fmt.Sprintf("unexpected status %d", resp.StatusCode))
+		slog.Warn("article source rejected content fetch",
+			"item_id", id, "link", item.Link, "status", resp.StatusCode)
+		badRequestError(c, fmt.Sprintf("source returned HTTP %d", resp.StatusCode))
 		return
 	}
 
@@ -286,12 +289,15 @@ func (h *Handler) fetchItemContent(c *gin.Context) {
 
 	article, err := readability.FromReader(resp.Body, parsedURL)
 	if err != nil {
+		slog.Warn("failed to extract article content",
+			"item_id", id, "link", item.Link, "error", err)
 		internalError(c, err, "extract content")
 		return
 	}
 
 	content := strings.TrimSpace(article.Content)
 	if content == "" {
+		slog.Warn("no content extracted from article", "item_id", id, "link", item.Link)
 		badRequestError(c, "no content extracted")
 		return
 	}

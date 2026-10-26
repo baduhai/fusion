@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import {
   Circle,
   CircleCheck,
@@ -230,6 +231,9 @@ export function ArticleDrawer() {
       await fetchContent.mutateAsync(article.id);
     } catch (error) {
       console.error("Failed to fetch content:", error);
+      toast.error(t("article.toast.fetchContentFailed"), {
+        description: error instanceof Error ? error.message : undefined,
+      });
       return;
     }
 

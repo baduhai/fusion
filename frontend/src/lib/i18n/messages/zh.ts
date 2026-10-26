@@ -223,6 +223,7 @@ export const zhMessages: PartialMessages = {
   "article.list.inbox": "收件箱",
   "article.readingTime.lessThanOne": "少于 1 分钟",
   "article.readingTime.minutes": "{minutes} 分钟",
+  "article.toast.fetchContentFailed": "获取完整内容失败",
   "feed.standaloneArticles": "独立文章",
   "settings.autoMarkRead.description": "滚动浏览大部分页面后自动将文章标记为已读",
   "settings.autoMarkRead.label": "自动标记为已读",

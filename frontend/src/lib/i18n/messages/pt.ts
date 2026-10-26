@@ -223,6 +223,7 @@ export const ptMessages: PartialMessages = {
   "article.list.inbox": "Caixa de entrada",
   "article.readingTime.lessThanOne": "< 1 min de leitura",
   "article.readingTime.minutes": "{minutes} min de leitura",
+  "article.toast.fetchContentFailed": "Falha ao obter o conteúdo completo",
   "feed.standaloneArticles": "Artigos independentes",
   "settings.autoMarkRead.description": "Marcar artigos como lidos automaticamente apos rolar pela maior parte da pagina",
   "settings.autoMarkRead.label": "Marcar como lido automaticamente",

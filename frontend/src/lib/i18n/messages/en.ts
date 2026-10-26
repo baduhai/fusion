@@ -214,6 +214,7 @@ export const enMessages = {
   "article.action.unarchive": "Unarchive",
   "article.readingTime.lessThanOne": "< 1 min read",
   "article.readingTime.minutes": "{minutes} min read",
+  "article.toast.fetchContentFailed": "Failed to fetch full content",
   "article.feedFallback": "Feed",
   "article.filter.all": "All",
   "article.filter.starred": "Starred",
