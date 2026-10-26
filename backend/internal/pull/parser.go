@@ -209,6 +209,14 @@ func mapItem(item *gofeed.Item, baseURL *url.URL) *ParsedItem {
 		sourcePubDate = item.UpdatedParsed.Unix()
 		hasSourcePubDate = true
 		pubDate = sourcePubDate
+	} else if parsed, ok := parseLocalizedDate(item.Published); ok {
+		sourcePubDate = parsed.Unix()
+		hasSourcePubDate = true
+		pubDate = sourcePubDate
+	} else if parsed, ok := parseLocalizedDate(item.Updated); ok {
+		sourcePubDate = parsed.Unix()
+		hasSourcePubDate = true
+		pubDate = sourcePubDate
 	} else {
 		pubDate = time.Now().Unix()
 	}
