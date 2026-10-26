@@ -81,8 +81,13 @@ func FetchAndParse(ctx context.Context, feed *model.Feed, timeout time.Duration,
 		return result, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 
+	body, err := decodeFeedBody(resp)
+	if err != nil {
+		return result, fmt.Errorf("decode feed: %w", err)
+	}
+
 	fp := gofeed.NewParser()
-	parsedFeed, err := fp.Parse(resp.Body)
+	parsedFeed, err := fp.Parse(body)
 	if err != nil {
 		return result, fmt.Errorf("parse feed: %w", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf16"
 
 	"github.com/0x2E/fusion/internal/model"
 	"github.com/mmcdole/gofeed"
@@ -154,6 +155,130 @@ func TestFallbackGUIDIgnoresSyntheticPubDate(t *testing.T) {
 
 	if g1 != g2 {
 		t.Fatalf("expected stable GUID without source pub date, got %q and %q", g1, g2)
+	}
+}
+
+func TestFetchAndParseDecodesCharsetFromContentType(t *testing.T) {
+	// ISO-8859-1 bytes: "Notícias" and "Olá".
+	body := []byte("<rss version=\"2.0\"><channel><title>Not\xedcias</title>" +
+		"<link>https://example.com</link>" +
+		"<item><guid>g1</guid><title>Ol\xe1</title><link>https://example.com/1</link></item>" +
+		"</channel></rss>")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/xml; charset=ISO-8859-1")
+		_, _ = w.Write(body)
+	}))
+	defer server.Close()
+
+	result, err := FetchAndParse(context.Background(), &model.Feed{Link: server.URL}, 5*time.Second, true)
+	if err != nil {
+		t.Fatalf("FetchAndParse() failed: %v", err)
+	}
+	if len(result.Items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(result.Items))
+	}
+	if result.Items[0].Title != "Olá" {
+		t.Fatalf("expected decoded title %q, got %q", "Olá", result.Items[0].Title)
+	}
+}
+
+func TestFetchAndParseDecodesCharsetFromXMLDeclaration(t *testing.T) {
+	body := append(
+		[]byte("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>"),
+		[]byte("<rss version=\"2.0\"><channel><title>Not\xedcias</title>"+
+			"<link>https://example.com</link>"+
+			"<item><guid>g1</guid><title>Ol\xe1</title><link>https://example.com/1</link></item>"+
+			"</channel></rss>")...,
+	)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/rss+xml")
+		_, _ = w.Write(body)
+	}))
+	defer server.Close()
+
+	result, err := FetchAndParse(context.Background(), &model.Feed{Link: server.URL}, 5*time.Second, true)
+	if err != nil {
+		t.Fatalf("FetchAndParse() failed: %v", err)
+	}
+	if len(result.Items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(result.Items))
+	}
+	if result.Items[0].Title != "Olá" {
+		t.Fatalf("expected decoded title %q, got %q", "Olá", result.Items[0].Title)
+	}
+}
+
+func TestFetchAndParseDecodesUTF8BOM(t *testing.T) {
+	body := append([]byte{0xEF, 0xBB, 0xBF},
+		[]byte("<rss version=\"2.0\"><channel><title>Notícias</title>"+
+			"<link>https://example.com</link>"+
+			"<item><guid>g1</guid><title>Olá</title><link>https://example.com/1</link></item>"+
+			"</channel></rss>")...)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/rss+xml")
+		_, _ = w.Write(body)
+	}))
+	defer server.Close()
+
+	result, err := FetchAndParse(context.Background(), &model.Feed{Link: server.URL}, 5*time.Second, true)
+	if err != nil {
+		t.Fatalf("FetchAndParse() failed: %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].Title != "Olá" {
+		t.Fatalf("expected decoded item, got %+v", result.Items)
+	}
+}
+
+func TestFetchAndParseDecodesUTF16Feed(t *testing.T) {
+	body := utf16LEWithBOM(`<?xml version="1.0" encoding="UTF-16"?>` +
+		`<rss version="2.0"><channel><title>Notícias</title>` +
+		`<link>https://example.com</link>` +
+		`<item><guid>g1</guid><title>Olá</title><link>https://example.com/1</link></item>` +
+		`</channel></rss>`)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/rss+xml")
+		_, _ = w.Write(body)
+	}))
+	defer server.Close()
+
+	result, err := FetchAndParse(context.Background(), &model.Feed{Link: server.URL}, 5*time.Second, true)
+	if err != nil {
+		t.Fatalf("FetchAndParse() failed: %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].Title != "Olá" {
+		t.Fatalf("expected decoded item, got %+v", result.Items)
+	}
+}
+
+func utf16LEWithBOM(s string) []byte {
+	units := utf16.Encode([]rune(s))
+	out := []byte{0xFF, 0xFE}
+	for _, unit := range units {
+		out = append(out, byte(unit), byte(unit>>8))
+	}
+	return out
+}
+
+func TestFetchAndParseFallsBackWhenCharsetIsUnknown(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/xml; charset=x-unknown")
+		_, _ = w.Write([]byte("<rss version=\"2.0\"><channel><title>Notícias</title>" +
+			"<link>https://example.com</link>" +
+			"<item><guid>g1</guid><title>Olá</title><link>https://example.com/1</link></item>" +
+			"</channel></rss>"))
+	}))
+	defer server.Close()
+
+	result, err := FetchAndParse(context.Background(), &model.Feed{Link: server.URL}, 5*time.Second, true)
+	if err != nil {
+		t.Fatalf("FetchAndParse() failed: %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].Title != "Olá" {
+		t.Fatalf("expected decoded item, got %+v", result.Items)
 	}
 }
 
