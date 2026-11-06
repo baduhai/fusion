@@ -481,7 +481,10 @@ export function ArticleDrawer() {
                 {articleBody}
               </EinkArticleView>
             ) : (
-              <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1">
+              <ScrollArea
+                ref={scrollAreaRef}
+                className="min-h-0 w-full min-w-0 flex-1 overflow-hidden [&_[data-slot=scroll-area-viewport]>div]:!block"
+              >
                 <article
                   ref={articleRef}
                   tabIndex={-1}
